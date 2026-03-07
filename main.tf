@@ -36,7 +36,7 @@ module "nfs" {
   bridge      = var.bridge
   octet       = "146"
   vlan        = 200
-  memory      = 4096
+  memory      = 2048
   nameserver  = var.nameserver
   target_node = var.target_node
   clone       = "freebsd-150-tmpl"
