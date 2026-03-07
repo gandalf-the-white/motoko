@@ -1,8 +1,0 @@
-all:
-  hosts:
-    dev-server:
-      ansible_host: 192.188.200.145
-  vars:
-    ansible_user: spike
-    ansible_python_interpreter: /usr/local/bin/python3.11
-    ansible_ssh_private_key_file: /Users/laurent/.ssh/id_ed25519_proxmox

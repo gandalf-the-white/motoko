@@ -109,3 +109,12 @@
     - rpcbind
     - nfsd
     - mountd
+
+- name: Replace the prompt
+  ansible.builtin.lineinfile:
+    path: "/home/{{ item }}/.cshrc"
+    regexp: "set prompt=(.*)$"
+    line: '        set prompt="\n%{\033[0;32m%}%n@%m:%{\033[0;33m%}%~%{\033[1;30m%}>%{\033\[1;37m%} "'
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  loop: "{{ accounts }}"

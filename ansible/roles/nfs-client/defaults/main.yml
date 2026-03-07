@@ -4,7 +4,15 @@
 
 packages:
   - sudo
+  - sbcl
+  - tree
+  - git-lite
+  - emacs-nox
+  - htop
 
 accounts:
   - spike
   - faye
+
+account: spike spiegel
+email: spike@gmail.com
