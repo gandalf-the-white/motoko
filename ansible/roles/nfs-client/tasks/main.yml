@@ -64,11 +64,29 @@
     name: nfs_client_enable
     value: "YES"
 
-- name: Replace the prompt
-  ansible.builtin.lineinfile:
+- name: Update tcsh prompt
+  ansible.builtin.replace:
     path: "/home/{{ item }}/.cshrc"
-    regexp: "set prompt=(.*)$"
-    line: '        set prompt="\n%{\033[0;32m%}%n@%m:%{\033[0;33m%}%~%{\033[1;30m%}>%{\033\[1;37m%} "'
+    regexp: '^\t*set\s+prompt\s*=.*'
+    replace: '\tset prompt="\\n%{\033[0;32m%}%n@%m:%{\033[0;33m%}%~%{\033[1;30m%}>%{\033[1;37m%} "'
     owner: "{{ item }}"
-    group: " {{ item }}"
+    group: "{{ item }}"
+  loop: "{{ accounts }}"
+
+- name: Ensure emacs directory exists
+  ansible.builtin.file:
+    path: "/home/{{ item }}/.emacs.d"
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: "0755"
+  loop: "{{ accounts }}"
+
+- name: Copy init.el
+  ansible.builtin.template:
+    src: init.el.j2
+    dest: "/home/{{ item }}/.emacs.d/init.el"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: "0644"
   loop: "{{ accounts }}"
