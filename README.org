@@ -1,0 +1,6 @@
+#+title: Just my Platform
+
+* Introduction
+My short ambition to automate my development platform including
++ NFS server
++ Development setup on FreeBSD

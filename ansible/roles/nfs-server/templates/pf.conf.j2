@@ -1,0 +1,17 @@
+ext_if = "{{ ext_if }}"
+nfs_net = "{{ prefix }}/24"
+
+set skip on lo
+
+block in all
+pass out all keep state
+
+# SSH
+pass in on $ext_if proto tcp from $nfs_net to ($ext_if) port 22 keep state
+
+# NFSv4
+pass in on $ext_if proto tcp from $nfs_net to ($ext_if) port 2049 keep state
+
+# rpcbind (nécessaire)
+pass in on $ext_if proto tcp from $nfs_net to ($ext_if) port 111 keep state
+pass in on $ext_if proto udp from $nfs_net to ($ext_if) port 111 keep state

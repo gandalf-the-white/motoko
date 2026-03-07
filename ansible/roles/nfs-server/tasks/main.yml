@@ -1,0 +1,111 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for ansible/roles/nfs-server
+
+- name: Install packages
+  community.general.pkgng:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ packages }}"
+
+- name: Allow wheel group sudo without password
+  ansible.builtin.lineinfile:
+    path: /usr/local/etc/sudoers
+    regexp: '^# %wheel ALL=\(ALL\) ALL'
+    line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+    validate: "/usr/local/sbin/visudo -cf %s"
+
+- name: Enable nfs at boot
+  community.general.sysrc:
+    name: nfs_server_enable
+    value: "YES"
+
+- name: Enable mount at boot
+  community.general.sysrc:
+    name: mountd_enable
+    value: "YES"
+
+- name: Enable rpcbind at boot
+  community.general.sysrc:
+    name: rpcbind_enable
+    value: "YES"
+
+- name: Create NFS directory
+  file:
+    path: /nfs
+    state: directory
+
+- name: Add group
+  ansible.builtin.group:
+    name: crew
+    state: present
+
+- name: Add user
+  ansible.builtin.user:
+    name: "{{ item }}"
+    comment: "{{ item }}"
+    groups: crew, wheel
+    state: present
+  loop: "{{ accounts }}"
+
+- name: Create directory account
+  file:
+    path: "/nfs/{{ item }}"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: "0700"
+    state: directory
+    recurse: yes
+  loop: "{{ accounts }}"
+
+- name: Create common directory
+  file:
+    path: /nfs/crew
+    owner: root
+    group: crew
+    mode: "0770"
+    state: directory
+
+- name: Deploy exports
+  template:
+    src: exports.j2
+    dest: /etc/exports
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Deploy pf.conf
+  template:
+    src: pf.conf.j2
+    dest: /etc/pf.conf
+    owner: root
+    group: wheel
+    mode: "0644"
+
+- name: Check if pf module is loaded
+  command: kldstat -n pf
+  register: pf_loaded
+  failed_when: false
+  changed_when: false
+
+- name: Load pf module if not loaded
+  command: kldload pf
+  when: pf_loaded.rc != 0
+
+- name: check pf.conf
+  command: pfctl -vnf /etc/pf.conf
+  register: pf_check
+  changed_when: false
+
+- name: reload pf
+  command: pfctl -f /etc/pf.conf
+  when: pf_check.rc == 0
+  notify: reload pf
+
+- name: Ensure service are running
+  ansible.builtin.shell: >
+    service {{ item }} restart
+  loop:
+    - rpcbind
+    - nfsd
+    - mountd

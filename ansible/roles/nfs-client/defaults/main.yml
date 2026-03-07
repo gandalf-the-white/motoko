@@ -1,0 +1,10 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for ansible/roles/nfs-client
+
+packages:
+  - sudo
+
+accounts:
+  - spike
+  - faye

@@ -1,0 +1,13 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for ansible/roles/nfs-server
+
+packages:
+  - sudo
+  - emacs-nox
+
+accounts:
+  - spike
+  - faye
+
+ext_if: "eth0"

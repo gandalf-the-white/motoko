@@ -1,0 +1,65 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for ansible/roles/nfs-client
+
+- name: Install packages
+  community.general.pkgng:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ packages }}"
+
+- name: Allow wheel group sudo without password
+  ansible.builtin.lineinfile:
+    path: /usr/local/etc/sudoers
+    regexp: '^# %wheel ALL=\(ALL\) ALL'
+    line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+    validate: "/usr/local/sbin/visudo -cf %s"
+
+- name: Add existing users to wheel group
+  ansible.builtin.user:
+    name: spike
+    groups: wheel
+    append: true
+
+- name: Add group
+  ansible.builtin.group:
+    name: crew
+    state: present
+
+- name: Create user
+  user:
+    name: "{{ item }}"
+    shell: /bin/tcsh
+    state: present
+    password: "{{ 'valentine' | password_hash('sha512') }}"
+  loop: "{{ accounts }}"
+
+- name: Add user
+  ansible.builtin.user:
+    name: "{{ item }}"
+    comment: "{{ item }}"
+    groups: wheel, crew
+    state: present
+  loop: "{{ accounts }}"
+
+- name: Create directory
+  file:
+    path: "/mnt/nfs/{{ item }}"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    state: directory
+  loop: "{{ accounts }}"
+
+- name: Mount directories
+  ansible.posix.mount:
+    src: "{{ nfs }}:/nfs/{{ item }}"
+    path: "/mnt/nfs/{{ item }}"
+    state: mounted
+    fstype: nfs
+    opts: rw
+  loop: "{{ accounts }}"
+
+- name: Enable nfs at boot
+  community.general.sysrc:
+    name: nfs_client_enable
+    value: "YES"
