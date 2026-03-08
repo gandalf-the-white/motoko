@@ -2,6 +2,16 @@
 ---
 # tasks file for ansible/roles/nfs-server
 
+- name: Set runtime hostname
+  ansible.builtin.command: hostname {{ hostname }}
+
+- name: Persist hostname in rc.conf
+  ansible.builtin.lineinfile:
+    path: /etc/rc.conf
+    regexp: "^hostname="
+    line: 'hostname="{{ hostname }}"'
+    create: yes
+
 - name: Install packages
   community.general.pkgng:
     name: "{{ item }}"

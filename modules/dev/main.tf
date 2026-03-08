@@ -85,9 +85,10 @@ resource "local_file" "inventory" {
 resource "local_file" "playbook" {
   content = templatefile("${path.module}/manifests/playbook-template.yaml",
     {
-      nfs     = "${var.prefix}.${var.nfs}"
-      proxy   = var.proxy
-      noproxy = "${var.prefix}.0/24"
+      hostname = var.name
+      nfs      = "${var.prefix}.${var.nfs}"
+      proxy    = var.proxy
+      noproxy  = "${var.prefix}.0/24"
   })
   filename        = "./ansible/playbook-dev.yaml"
   file_permission = "0644"
