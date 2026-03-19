@@ -1,0 +1,187 @@
+;;; init.el --- Clean modern Emacs config -*- lexical-binding: t; -*-
+
+;; =========================
+;; 🚀 Startup optimization
+;; =========================
+(setq gc-cons-threshold (* 50 1000 1000))
+(add-hook 'emacs-startup-hook
+          (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+
+(setq inhibit-startup-message t)
+(setq ring-bell-function 'ignore)
+
+;; =========================
+;; 📦 Package system
+;; =========================
+(require 'package)
+(setq package-archives
+      '(("melpa" . "https://melpa.org/packages/")
+        ("gnu"   . "https://elpa.gnu.org/packages/")
+        ("org"   . "https://orgmode.org/elpa/")))
+
+(package-initialize)
+(unless package-archive-contents
+  (package-refresh-contents))
+
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+
+(require 'use-package)
+(setq use-package-always-ensure t
+      use-package-expand-minimally t)
+
+;; =========================
+;; 🧹 UI
+;; =========================
+(menu-bar-mode -1)
+;; (tool-bar-mode -1) 
+;; (scroll-bar-mode -1) 
+(global-display-line-numbers-mode 1)
+(setq display-line-numbers-type 'relative)
+
+;; =========================
+;; 💾 Files & backups
+;; =========================
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+(setq auto-save-file-name-transforms
+      `((".*" "~/.emacs.d/auto-saves/" t)))
+
+;; =========================
+;; ⚙️ Custom file
+;; =========================
+(setq custom-file "~/.emacs.d/custom.el")
+(load custom-file 'noerror)
+
+;; =========================
+;; 🧠 Completion (modern stack)
+;; =========================
+(use-package vertico
+  :init
+  (vertico-mode))
+
+(use-package orderless
+  :init
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
+
+(use-package marginalia
+  :init
+  (marginalia-mode))
+
+(use-package consult)
+
+;; =========================
+;; 🔎 Search & navigation
+;; =========================
+(global-set-key (kbd "C-s") 'consult-line)
+(global-set-key (kbd "C-x b") 'consult-buffer)
+(global-set-key (kbd "C-x C-f") 'find-file)
+
+;; =========================
+;; 🧩 Project management
+;; =========================
+(use-package projectile
+  :init
+  (projectile-mode 1)
+  :bind-keymap
+  ("C-c p" . projectile-command-map))
+
+;; =========================
+;; 🧑‍💻 Git
+;; =========================
+(use-package magit
+  :commands (magit-status)
+  :bind ("C-x g" . magit-status))
+
+;; =========================
+;; ⚡ Evil (Vim emulation)
+;; =========================
+(use-package evil
+  :init
+  (setq evil-want-integration t
+        evil-want-keybinding nil)
+  :config
+  (evil-mode 1))
+
+(use-package evil-collection
+  :after evil
+  :config
+(evil-collection-init))
+
+;; =========================
+;; ✍️ Company (completion)
+;; =========================
+(use-package company
+  :hook (after-init . global-company-mode)
+  :config
+  (setq company-minimum-prefix-length 1
+        company-idle-delay 0.0))
+
+;; =========================
+;; 🧪 LSP (modern dev)
+;; =========================
+(use-package lsp-mode
+  :commands lsp
+  :hook ((python-mode . lsp)
+         (rust-mode . lsp)
+         (js-mode . lsp))
+  :config
+  (setq lsp-headerline-breadcrumb-enable nil))
+
+(use-package lsp-ui
+  :commands lsp-ui-mode)
+
+;; =========================
+;; 🦀 Rust (modern)
+;; =========================
+(use-package rustic
+  :config
+(setq rustic-lsp-client 'lsp-mode))
+
+;; =========================
+;; 🧠 Lisp dev
+;; =========================
+(use-package paredit
+  :hook ((emacs-lisp-mode lisp-mode) . paredit-mode))
+
+(use-package sly
+  :commands sly)
+
+;; =========================
+;; 🎨 Theme & modeline
+;; =========================
+(use-package doom-themes
+  :config
+  (load-theme 'doom-one t))
+
+(use-package doom-modeline
+  :init (doom-modeline-mode 1))
+
+;; =========================
+;; 📐 Indentation guides
+;; =========================
+(use-package highlight-indent-guides
+  :hook (prog-mode . highlight-indent-guides-mode)
+  :config
+  (setq highlight-indent-guides-method 'bitmap))
+
+;; =========================
+;; 🌍 Encoding
+;; =========================
+(set-language-environment "UTF-8")
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+
+;; =========================
+;; ⏱️ Auto update (safe)
+;; =========================
+(use-package auto-package-update
+  :config
+  (setq auto-package-update-delete-old-versions t
+        auto-package-update-hide-results t)
+  (run-at-time "1 day" 86400 #'auto-package-update-maybe))
+
+(provide 'init)
+;;; init.el ends here

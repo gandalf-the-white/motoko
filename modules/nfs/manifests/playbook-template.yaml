@@ -4,6 +4,7 @@
   become: true
 
   vars:
+    hostname: "${hostname}"
     prefix: "${prefix}"
     http_proxy: "${proxy}"
     https_proxy: "${proxy}"
