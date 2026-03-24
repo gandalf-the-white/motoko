@@ -100,7 +100,7 @@
 
 - name: Copy init.el
   ansible.builtin.template:
-    src: init-v5.el.j2
+    src: init-v6.el.j2
     dest: "/home/{{ item }}/.emacs.d/init.el"
     owner: "{{ item }}"
     group: "{{ item }}"
