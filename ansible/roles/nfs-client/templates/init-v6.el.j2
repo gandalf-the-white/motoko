@@ -1,0 +1,592 @@
+;;; init.el --- Configuration personnelle -*- lexical-binding: t; -*-
+;;
+;; Auteur : spike spiegel
+;; Structure :
+;;   1. Bootstrap & packages
+;;   2. Performances
+;;   3. Identité & encodage
+;;   4. Interface & apparence
+;;   5. Comportement éditeur
+;;   6. Navigation & fichiers (Dired, Projectile)
+;;   7. Complétion (Vertico, Orderless, Marginalia, Consult)
+;;   8. Evil (émulation Vim)
+;;   9. Outils de développement (Magit, Yasnippet, Company, LSP)
+;;  10. Langages : Rust
+;;  11. Langages : Common Lisp (SLY, Paredit)
+
+;;; ============================================================
+;;; 1. BOOTSTRAP & PACKAGES
+;;; ============================================================
+
+;; Déclaration des dépôts de paquets
+(require 'package)
+
+(setq package-enable-at-startup nil
+      package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("gnu"   . "https://elpa.gnu.org/packages/")
+                         ("org"   . "https://orgmode.org/elpa/")))
+
+(package-initialize)
+
+;; Bootstrap use-package s'il n'est pas encore installé
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package)
+  (eval-when-compile (require 'use-package)))
+
+;; Options globales use-package :
+;;   always-ensure     -> installe automatiquement les paquets manquants
+;;   expand-minimally  -> génère du code plus compact (meilleur au démarrage)
+;;   compute-statistics -> active M-x use-package-report pour profiler
+(eval-and-compile
+  (setq use-package-always-ensure t
+        use-package-expand-minimally t
+        use-package-compute-statistics t))
+
+;; Chemin pour les librairies locales personnelles
+(add-to-list 'load-path "~/.emacs.d/lisp/")
+
+;; Fichier de personnalisations générées par customize (séparé de init.el)
+(setq custom-file "~/.emacs.d/custom.el")
+(load custom-file 'noerror)
+
+;; Mise à jour automatique des paquets au démarrage si nécessaire
+(use-package auto-package-update
+  :config
+  (setq auto-package-update-delete-old-versions t
+        auto-package-update-hide-results t)
+  (auto-package-update-maybe))
+
+;;; ============================================================
+;;; 2. PERFORMANCES
+;;; ============================================================
+
+;; Augmente le seuil GC pendant le démarrage pour accélérer le chargement,
+;; puis le remet à une valeur raisonnable une fois Emacs prêt.
+(setq gc-cons-threshold (* 50 1000 1000)
+      gc-cons-percentage 0.6)
+
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq gc-cons-threshold (* 2 1000 1000)
+                  gc-cons-percentage 0.1)))
+
+;; Augmente la taille des données lues depuis les processus externes.
+;; Indispensable pour que LSP ne soit pas bridé.
+(setq read-process-output-max (* 1024 1024))
+
+;;; ============================================================
+;;; 3. IDENTITÉ & ENCODAGE
+;;; ============================================================
+
+(setq user-full-name   "spike spiegel"
+      user-mail-address "spike@gmail.com")
+
+;; UTF-8 partout — évite les problèmes d'encodage sur tous les OS
+(set-language-environment   'utf-8)
+(prefer-coding-system        'utf-8)
+(set-default-coding-systems  'utf-8)
+(set-terminal-coding-system  'utf-8)
+(set-keyboard-coding-system  'utf-8)
+(setq locale-coding-system           'utf-8
+      default-file-name-coding-system 'utf-8)
+
+;;; ============================================================
+;;; 4. INTERFACE & APPARENCE
+;;; ============================================================
+
+;; --- Thème -------------------------------------------------------
+
+;; Zenburn : thème sombre aux tons chauds, reposant pour les longues sessions
+(use-package zenburn-theme
+  :config (load-theme 'zenburn t))
+
+;; Modeline enrichie avec icônes, indicateur LSP, nom de projet, etc.
+;; Nécessite une police Nerd Font installée pour les icônes.
+(use-package doom-modeline
+  :hook (after-init . doom-modeline-mode)
+  :config
+  (setq doom-modeline-persp-name               nil
+        doom-modeline-buffer-encoding          nil
+        doom-modeline-icon                     t
+        doom-modeline-major-mode-icon          nil
+        doom-modeline-major-mode-color-icon    t
+        doom-modeline-buffer-state-icon        t
+        doom-modeline-buffer-modification-icon t
+        doom-modeline-lsp-icon                 t
+        doom-modeline-time-icon                t
+        doom-modeline-time-live-icon           t
+        doom-modeline-buffer-file-name-style  'truncate-with-project))
+
+;; --- Chrome UI ---------------------------------------------------
+
+;; Supprime la barre de menus (inutile en usage clavier)
+(menu-bar-mode -1)
+
+;; Numéros de ligne dans tous les buffers...
+(global-display-line-numbers-mode 1)
+;; (setq display-line-numbers-type 'relative) ; décommenter pour les numéros relatifs (style Vim)
+
+;; ...sauf dans les modes où c'est inutile ou gênant
+(dolist (mode '(org-mode-hook
+                vterm-mode-hook
+                shell-mode-hook
+                treemacs-mode-hook
+                eshell-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+;; Retour à la ligne visuel (sans couper les mots)
+(global-visual-line-mode 1)
+
+;; Surligne la ligne courante pour repérer le curseur facilement
+(use-package hl-line
+  :ensure nil ; paquet natif Emacs
+  :init (global-hl-line-mode 1))
+
+;; Pulse du curseur lors des sauts de position (utile avec Evil)
+(use-package beacon
+  :config (beacon-mode t))
+
+;; Guides visuels d'indentation dans les buffers de code
+(use-package highlight-indent-guides
+  :hook (prog-mode . highlight-indent-guides-mode)
+  :config
+  (setq highlight-indent-guides-method 'character))
+
+;;; ============================================================
+;;; 5. COMPORTEMENT ÉDITEUR
+;;; ============================================================
+
+;; Remplace "yes/no" par "y/n" pour toutes les confirmations
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+;; Demande confirmation avant de quitter Emacs
+(setq confirm-kill-emacs 'y-or-n-p)
+
+;; Cloche visuelle plutôt que sonore
+(setq visible-bell t)
+
+;; Désactive l'écran de démarrage
+(setq inhibit-startup-message t)
+
+;; macOS : Alt = Super, Cmd = Meta (comportement naturel sur Mac)
+(setq ns-alternate-modifier 'super
+      ns-command-modifier   'meta)
+
+;; Sauvegarde de l'historique des minibuffers entre les sessions
+(use-package savehist
+  :init (savehist-mode))
+
+;; Rechargement automatique des fichiers modifiés sur disque
+(global-auto-revert-mode)
+
+;; --- Indentation -------------------------------------------------
+
+(setq-default tab-width        4
+              indent-tabs-mode nil  ; espaces, pas tabulations
+              c-basic-offset   4)
+
+;; --- Backups -----------------------------------------------------
+
+;; Centralise les backups dans un dossier dédié
+;; et active le versionnement (garde les 20 dernières versions)
+(setq backup-directory-alist '(("." . "~/.emacs.d/backup"))
+      backup-by-copying    t
+      version-control      t
+      delete-old-versions  t
+      kept-new-versions    20
+      kept-old-versions    5)
+
+;;; ============================================================
+;;; 6. NAVIGATION & FICHIERS
+;;; ============================================================
+
+;; --- Dired -------------------------------------------------------
+
+;; Dired : gestionnaire de fichiers natif d'Emacs
+(use-package dired
+  :ensure nil
+  :bind ([remap list-directory] . dired)
+  :custom
+  (dired-recursive-deletes 'top "Confirme la suppression des répertoires non vides.")
+  (dired-dwim-target t "Propose automatiquement la destination lors des copies/déplacements."))
+
+;; Extensions utiles de Dired (fichiers cachés, commandes supplémentaires)
+(use-package dired-x :ensure nil)
+
+;; Ferme le buffer Dired précédent quand on navigue dans un sous-dossier
+(setq dired-kill-when-opening-new-dired-buffer t)
+
+;; Affichage des sous-dossiers en arbre avec TAB
+(use-package dired-subtree
+  :after dired
+  :bind (:map dired-mode-map
+              ([?\t] . dired-subtree-toggle)))
+
+;; Masque les dotfiles par défaut, toggleable avec "."
+(use-package dired-hide-dotfiles
+  :hook (dired-mode . dired-hide-dotfiles-mode)
+  :bind (:map dired-mode-map
+              ("." . dired-hide-dotfiles-mode)))
+
+;; Visionneuse d'images intégrée à Dired
+(use-package image-dired  :ensure nil)
+(use-package image-dired+ :after image-dired)
+
+;; Sidebar Dired façon IDE (C-c s pour l'ouvrir/fermer)
+(use-package dired-sidebar
+  :bind ("C-c s" . dired-sidebar-toggle-sidebar))
+
+;; --- Projectile --------------------------------------------------
+
+;; Gestion de projets : navigation rapide entre fichiers, grep, etc.
+;; Raccourcis sous C-c p (ex: C-c p f pour trouver un fichier)
+(use-package projectile
+  :init
+  (setq projectile-mode-line-function
+        (lambda () (format " [%s]" (projectile-project-name))))
+  :config
+  (projectile-mode 1)
+  :bind-keymap
+  ("C-c p" . projectile-command-map))
+
+;; --- which-key ---------------------------------------------------
+
+;; Affiche les raccourcis disponibles après une pause sur un préfixe (ex: C-c)
+(use-package which-key
+  :config (which-key-mode))
+
+;; Navigation entre les fenêtres avec C-c + flèches
+(use-package windmove
+  :bind (("C-c <up>"    . windmove-up)
+         ("C-c <down>"  . windmove-down)
+         ("C-c <left>"  . windmove-left)
+         ("C-c <right>" . windmove-right)))
+
+;;; ============================================================
+;;; 7. COMPLÉTION (Vertico / Orderless / Marginalia / Consult)
+;;; ============================================================
+
+;; Vertico : interface de complétion verticale dans le minibuffer
+;; (remplace ivy/helm de façon plus légère et native)
+(use-package vertico
+  :init (vertico-mode))
+
+;; Orderless : complétion par composants séparés par des espaces.
+;; Ex: "buf sw" trouve "switch-to-buffer"
+(use-package orderless
+  :init
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults  nil
+        completion-category-overrides '((file (styles partial-completion)))))
+
+;; Marginalia : ajoute des annotations aux candidats dans le minibuffer
+;; (description des commandes, taille des fichiers, etc.)
+(use-package marginalia
+  :init (marginalia-mode))
+
+;; Consult : commandes de recherche et navigation enrichies
+;; (consult-buffer, consult-grep, consult-imenu, etc.)
+(use-package consult)
+
+;;; ============================================================
+;;; 8. EVIL (émulation Vim)
+;;; ============================================================
+
+;; evil-want-keybinding nil est requis avant evil-collection
+(use-package evil
+  :init
+  (setq evil-want-integration t
+        evil-want-keybinding  nil
+        evil-want-C-u-scroll  t   ; C-u scrolle comme dans Vim
+        evil-want-C-i-jump    nil)
+  :config
+  (evil-mode 1))
+
+;; evil-collection : bindings Evil pour de nombreux modes (dired, magit, etc.)
+(use-package evil-collection
+  :after evil
+  :config (evil-collection-init))
+
+;; evil-commentary : commenter/décommenter avec gc (comme vim-commentary)
+(use-package evil-commentary
+  :after evil
+  :init (evil-commentary-mode))
+
+;; evil-org : bindings Evil adaptés pour org-mode et org-agenda
+(use-package evil-org
+  :after org
+  :config
+  (add-hook 'org-mode-hook 'evil-org-mode)
+  (add-hook 'evil-org-mode-hook
+            (lambda () (evil-org-set-key-theme)))
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys))
+
+;;; ============================================================
+;;; 9. ORG-MODE
+;;; ============================================================
+
+;; org est un paquet natif, :ensure nil évite de télécharger
+;; une version tierce qui pourrait entrer en conflit.
+
+(use-package org
+  :ensure nil
+  :hook
+  ;; Active le retour à la ligne visuel et l'indentation automatique
+  (org-mode . visual-line-mode)
+  (org-mode . org-indent-mode)
+  :custom
+  ;; Répertoire principal org et fichier d'agenda
+  (org-directory "~/org/")
+  (org-agenda-files '("~/org/agenda.org"
+                      "~/org/projets.org"
+                      "~/org/inbox.org"))
+  ;; Archive des tâches terminées
+  (org-archive-location "~/org/archive.org::* Archives")
+
+  ;; --- Apparence ------------------------------------------------
+  ;; Cache les marqueurs de formatage (*gras*, /italique/, etc.)
+  (org-hide-emphasis-markers t)
+  ;; Affiche les titres avec une taille de police croissante
+  (org-pretty-entities t)
+  ;; Indente le contenu selon le niveau du titre
+  (org-startup-indented t)
+  ;; Replie tous les titres au démarrage (aperçu global)
+  (org-startup-folded 'overview)
+
+  ;; --- TODO -----------------------------------------------------
+  (org-todo-keywords
+   '((sequence "TODO(t)" "EN COURS(e!)" "EN ATTENTE(a@)" "|" "DONE(d!)" "ANNULÉ(c@)")))
+  (org-todo-keyword-faces
+   '(("TODO"       . (:foreground "orange red"   :weight bold))
+     ("EN COURS"   . (:foreground "yellow"        :weight bold))
+     ("EN ATTENTE" . (:foreground "deep sky blue" :weight bold))
+     ("DONE"       . (:foreground "forest green"  :weight bold))
+     ("ANNULÉ"     . (:foreground "dim gray"      :weight bold))))
+  ;; Log l'heure de clôture quand une tâche passe à DONE
+  (org-log-done 'time)
+  (org-log-into-drawer t)
+
+  ;; --- Capture --------------------------------------------------
+  (org-default-notes-file "~/org/inbox.org")
+  (org-capture-templates
+   '(("t" "Tâche"   entry (file+headline "~/org/inbox.org" "Tâches")
+      "* TODO %?\n  %U\n  %a")
+     ("n" "Note"    entry (file+headline "~/org/inbox.org" "Notes")
+      "* %?\n  %U")
+     ("j" "Journal" entry (file+datetree "~/org/journal.org")
+      "* %?\n  Entré le %U\n")))
+
+  ;; --- Agenda ---------------------------------------------------
+  (org-agenda-span 'week)
+  ;; Masque les tâches DONE dans l'agenda
+  (org-agenda-skip-scheduled-if-done t)
+  (org-agenda-skip-deadline-if-done  t)
+  ;; Affiche l'heure de début dans l'agenda
+  (org-agenda-time-grid
+   '((daily today require-timed)
+     (800 900 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900 2000)
+     "......" "----------------"))
+
+  ;; --- Src blocks -----------------------------------------------
+  ;; Indentation native dans les blocs de code
+  (org-src-tab-acts-natively t)
+  (org-src-preserve-indentation t)
+  ;; Édite les blocs de code dans la fenêtre courante (pas de popup)
+  (org-src-window-setup 'current-window)
+  ;; Active la coloration syntaxique dans les blocs #+begin_src
+  (org-src-fontify-natively t)
+
+  :bind
+  ;; Raccourcis globaux standards org
+  (("C-c a" . org-agenda)
+   ("C-c c" . org-capture)
+   ("C-c l" . org-store-link)))
+
+;; --- Langages exécutables dans les blocs src -------------------
+;; Active l'évaluation de code pour ces langages dans org-babel
+(with-eval-after-load 'org
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python     . t)
+     (shell      . t)
+     (lisp       . t)))
+  ;; Ne demande pas confirmation avant d'évaluer (à désactiver si paranoïa)
+  (setq org-confirm-babel-evaluate nil))
+
+;; --- Jolies puces -----------------------------------------------
+;; Remplace les tirets/étoiles des listes par des vrais caractères Unicode
+(use-package org-superstar
+  :after org
+  :hook (org-mode . org-superstar-mode)
+  :custom
+  (org-superstar-headline-bullets-list '("◉" "○" "✸" "✿" "✤")))
+
+;;; ============================================================
+;;; 9. OUTILS DE DÉVELOPPEMENT
+;;; ============================================================
+
+;; --- Git ---------------------------------------------------------
+
+;; Magit : interface Git complète, la meilleure de son genre
+(use-package magit
+  :commands magit-status
+  :bind ("C-x g" . magit-status))
+
+;; --- Snippets ----------------------------------------------------
+
+;; Yasnippet : système de snippets expansibles (ex: "defun TAB")
+(use-package yasnippet
+  :config
+  (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets")
+  (yas-global-mode 1))
+
+;; Collection de snippets prêts à l'emploi pour de nombreux langages
+(use-package yasnippet-snippets)
+
+;; --- Complétion de code ------------------------------------------
+
+;; Company : complétion de code avec popup (fonctionne avec LSP)
+(use-package company
+  :delight company-mode
+  :demand t
+  :init
+  (setq company-idle-delay           0.1
+        company-minimum-prefix-length 1)
+  :bind (:map company-active-map
+              ("C-n" . company-select-next)
+              ("C-p" . company-select-previous))
+  :config (global-company-mode))
+
+;; --- Délimiteurs & parenthèses -----------------------------------
+
+;; Colore les délimiteurs par niveau d'imbrication (très utile en Lisp)
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+;; Smartparens : gestion intelligente des paires de délimiteurs
+;; (désactivé en Lisp au profit de paredit, voir section 11)
+(use-package smartparens
+  :diminish smartparens-mode
+  :init (require 'smartparens-config)
+  :config
+  (smartparens-global-mode t)
+  (show-smartparens-global-mode t)
+  (setq sp-show-pair-from-inside t)
+  :custom-face
+  (sp-show-pair-match-face ((t (:foreground "White")))))
+
+;; --- LSP ---------------------------------------------------------
+
+;; lsp-mode : client LSP universel (autocomplétion, diagnostics, goto-def…)
+;; Les serveurs LSP doivent être installés séparément :
+;;   Python : pip install python-lsp-server
+;;   Rust   : rustup component add rust-analyzer
+;;   JS     : npm install -g typescript-language-server
+(use-package lsp-mode
+  :commands lsp
+  :hook ((python-mode . lsp)
+         (rust-mode   . lsp)
+         (js-mode     . lsp))
+  :config
+  (setq lsp-headerline-breadcrumb-enable nil))
+
+;; lsp-ui : overlays et popups visuels pour les diagnostics LSP
+(use-package lsp-ui
+  :commands lsp-ui-mode)
+
+;; consult-lsp : recherche de symboles LSP via consult
+(use-package consult-lsp)
+
+;; --- Restclient --------------------------------------------------
+
+;; Permet de tester des APIs REST directement depuis un fichier .http
+(use-package restclient
+  :mode ("\\.http\\'" . restclient-mode))
+
+;;; ============================================================
+;;; 10. LANGAGES : RUST
+;;; ============================================================
+
+;; rustic : mode Rust complet (remplace rust-mode).
+;; Intègre cargo, clippy, rustfmt et rust-analyzer via lsp-mode.
+;; Prérequis : rustup component add rust-analyzer
+(use-package rustic
+  :config
+  (setq rustic-lsp-client 'lsp-mode))
+
+;;; ============================================================
+;;; 11. LANGAGES : COMMON LISP
+;;; ============================================================
+
+;; --- SLY ---------------------------------------------------------
+
+;; Chemin vers l'implémentation Common Lisp (ici SBCL)
+(setq inferior-lisp-program "/usr/local/bin/sbcl")
+
+;; Extensions SLY : support ASDF et Quicklisp (chargées avant sly)
+(use-package sly-asdf      :defer t)
+(use-package sly-quicklisp :defer t)
+
+;; SLY : REPL et environnement interactif Common Lisp
+;; (successeur de SLIME, avec un REPL amélioré et de meilleures perfs)
+(use-package sly
+  :defer t
+  :after (sly-asdf sly-quicklisp)
+  :config
+  (setq sly-mrepl-pop-sylvester nil) ; désactive la mascotte au démarrage
+  :custom-face
+  (sly-mrepl-output-face ((t (:foreground "sienna")))))
+
+;; Les fichiers .asd (définitions de systèmes ASDF) s'ouvrent en lisp-mode
+(add-to-list 'auto-mode-alist '("\\.asd\\'" . lisp-mode))
+
+;; Lance automatiquement SLY à l'ouverture d'un fichier .asd,
+;; uniquement si aucune connexion n'est déjà active.
+(defun my/start-sly-if-asd ()
+  (when (and buffer-file-name
+             (string-match-p "\\.asd\\'" buffer-file-name))
+    (require 'sly)
+    (unless (sly-connected-p)
+      (sly))))
+
+(add-hook 'lisp-mode-hook #'my/start-sly-if-asd)
+
+;; --- Paredit & outils Lisp ---------------------------------------
+
+;; paren-face : atténue visuellement les parenthèses (focus sur le contenu)
+(use-package paren-face :defer t)
+
+;; paredit : édition structurelle des S-expressions.
+;; Les parenthèses sont toujours équilibrées.
+;; En mode Evil insert, ) insère une vraie parenthèse fermante.
+(use-package paredit
+  :hook ((emacs-lisp-mode lisp-mode) . paredit-mode)
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'insert paredit-mode-map
+      (kbd ")") #'paredit-close-parenthesis)))
+
+;; highlight-parentheses : colorie les paires autour du curseur
+(use-package highlight-parentheses :defer t)
+
+;; Hook commun à tous les modes Lisp :
+;;   - désactive smartparens (conflit avec paredit)
+;;   - active paredit, paren-face et highlight-parentheses
+(defun my-lisp-mode-hook-fn ()
+  (smartparens-mode 0)
+  (paredit-mode 1)
+  (paren-face-mode 1)
+  (highlight-parentheses-mode 1))
+
+(dolist (hook '(lisp-mode-hook emacs-lisp-mode-hook))
+  (add-hook hook #'my-lisp-mode-hook-fn))
+
+;;; ============================================================
+;;; FIN
+;;; ============================================================
+
+(provide 'init)
+;;; init.el ends here

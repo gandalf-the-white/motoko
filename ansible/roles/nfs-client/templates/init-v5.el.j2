@@ -2,8 +2,6 @@
 
 (require 'package)
 
-;; (setq package-check-signature nil)
-
 (setq user-full-name "spike spiegel"
       user-mail-address "spike@gmail.com")
 
@@ -12,7 +10,6 @@
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                          ("gnu" . "https://elpa.gnu.org/packages/")
                          ("org" . "https://orgmode.org/elpa/")))
-
 (package-initialize)
 
 (unless (package-installed-p 'use-package)
@@ -21,8 +18,9 @@
   (eval-when-compile (require 'use-package)))
 
 (eval-and-compile
- (setq use-package-always-ensure t
-       use-package-expand-minimally t))
+  (setq use-package-always-ensure t
+        use-package-expand-minimally t
+        use-package-compute-statistics t ))
 
 (setq inhibit-startup-message t
       visible-bell t)
@@ -30,11 +28,13 @@
 (setq gc-cons-threshold (* 50 1000 1000))
 (setq gc-cons-percentage 0.6)
 (add-hook 'emacs-startup-hook
-          (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+          (lambda ()
+            (setq gc-cons-threshold (* 2 1000 1000)
+                  gc-cons-percentage 0.1)))
+
 
 (setq read-process-output-max (* 1024 1024)) ;; LSP perf
 
-;;; (set q custom-file (make-temp-file "emacs-custom"))
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
 
@@ -42,7 +42,7 @@
       use-package-expand-minimally t
       use-package-compute-statistics t)
 
-(add-to-list 'load-path "~/emacs.d/lisp/")
+(add-to-list 'load-path "~/.emacs.d/lisp/")
 
 (menu-bar-mode -1)
 (global-display-line-numbers-mode 1)
@@ -85,72 +85,62 @@
 (set-keyboard-coding-system 'utf-8)
 
 (use-package auto-package-update
-             :ensure t
-             :config
-             (setq auto-package-update-delete-old-versions t
-                   auto-package-update-hide-results t)
-             (run-at-time "3 day" (* 3 86400) #'auto-package-update-maybe))
+  :config
+  (setq auto-package-update-delete-old-versions t
+        auto-package-update-hide-results t)
+  (auto-package-update-maybe))
 
 (use-package savehist
-             :init
-             (savehist-mode))
+  :init
+  (savehist-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; V E R T I C O   ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
 (use-package vertico
-             :init
-             (vertico-mode))
+  :init
+  (vertico-mode))
 
 (use-package orderless
-             :init
-             (setq completion-styles '(orderless basic)
-                   completion-category-defaults nil
-                   completion-category-overrides '((file (styles partial-completion)))))
+  :init
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
 
 (use-package marginalia
-             :init
-             (marginalia-mode))
+  :init
+  (marginalia-mode))
 
 (use-package consult)
-
-;; (use-package vertico
-;;   :ensure t
-;;   :config
-;;   (vertico-mode 1))
-
-;; (use-package rainbow-mode
-;; :ensure t)
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; T H E M E S     ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
 (use-package zenburn-theme
-             :ensure t
-             :config (load-theme 'zenburn t))
+  :ensure t
+  :config (load-theme 'zenburn t))
 
 (use-package doom-modeline
-             :hook (after-init . doom-modeline-mode)
-             :config
-             (setq doom-modeline-persp-name               nil
-                   doom-modeline-buffer-encoding          nil
-                   doom-modeline-icon                     t
-                   doom-modeline-major-mode-icon          nil
-                   doom-modeline-major-mode-color-icon    t
-                   doom-modeline-buffer-state-icon        t
-                   doom-modeline-buffer-modification-icon t
-                   doom-modeline-lsp-icon                 t
-                   doom-modeline-time-icon                t
-                   doom-modeline-time-live-icon           t
-                   doom-modeline-buffer-file-name-style  'truncate-with-project))
+  :hook (after-init . doom-modeline-mode)
+  :config
+  (setq doom-modeline-persp-name               nil
+        doom-modeline-buffer-encoding          nil
+        doom-modeline-icon                     t
+        doom-modeline-major-mode-icon          nil
+        doom-modeline-major-mode-color-icon    t
+        doom-modeline-buffer-state-icon        t
+        doom-modeline-buffer-modification-icon t
+        doom-modeline-lsp-icon                 t
+        doom-modeline-time-icon                t
+        doom-modeline-time-live-icon           t
+        doom-modeline-buffer-file-name-style  'truncate-with-project))
 
-(setq confirm-kill-emacs 'yes-or-no-p)
+(setq confirm-kill-emacs 'y-or-n-p)
 
 (use-package hl-line
-             :ensure t
-             :init (global-hl-line-mode 1))
+  :init (global-hl-line-mode 1))
 
 ;; (use-package highlight-indent-guides
 ;;   :ensure t
@@ -166,206 +156,174 @@
 ;;   (set-face-foreground 'highlight-indent-guides-character-face "dimgray"))
 
 (use-package highlight-indent-guides
-             :hook (prog-mode . highlight-indent-guides-mode)
-             :config
-             (setq highlight-indent-guides-method 'character))
+  :hook (prog-mode . highlight-indent-guides-mode)
+  :config
+  (setq highlight-indent-guides-method 'character))
 
 (use-package beacon
-             :ensure t
-             :config
-             (beacon-mode t))
+  :ensure t
+  :config
+  (beacon-mode t))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; C O M M A N D   ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
 (use-package dired
-             :ensure nil
-             :bind ([remap list-directory] . dired)
-             :custom
-             (dired-recursive-deletes 'top "Confirm deletion for all top non-empty directories.")
-             (dired-dwim-target t "Try to guess target for actions."))
+  :ensure nil
+  :bind ([remap list-directory] . dired)
+  :custom
+  (dired-recursive-deletes 'top "Confirm deletion for all top non-empty directories.")
+  (dired-dwim-target t "Try to guess target for actions."))
 
 (use-package dired-x
-             :ensure nil)
+  :ensure nil)
 
 (use-package dired-subtree
-             :ensure t
-             :after dired
-             :bind
-             (:map dired-mode-map
-                   ([?\t] . dired-subtree-toggle)))
+  :ensure t
+  :after dired
+  :bind
+  (:map dired-mode-map
+        ([?\t] . dired-subtree-toggle)))
 
 (use-package dired-hide-dotfiles
-             :ensure t
-             :bind
-             (:map dired-mode-map
-                   ("." . dired-hide-dotfiles-mode))
-             :hook
-             (dired-mode . dired-hide-dotfiles-mode))
+  :ensure t
+  :bind
+  (:map dired-mode-map
+        ("." . dired-hide-dotfiles-mode))
+  :hook
+  (dired-mode . dired-hide-dotfiles-mode))
 
 (use-package image-dired
-             :ensure nil)
+  :ensure nil)
 
 (use-package image-dired+
-             :ensure t
-             :after image-dired)
+  :ensure t
+  :after image-dired)
 
 (setq dired-kill-when-opening-new-dired-buffer t)
 
 (use-package which-key
-             :ensure t
-             :config (which-key-mode))
+  :ensure t
+  :config (which-key-mode))
 
 (use-package dired-sidebar
-             :ensure t
-             :bind ("C-c s" . dired-sidebar-toggle-sidebar))
-
-;; (use-package projectile
-;;              :ensure t
-;;              :bind-keymap ("s-p" . projectile-command-map)
-;;              :init
-;;              (setq projectile-mode-line-function '(lambda () (format " [%s]" (projectile-project-name))))
-;;              :config
-;;              (projectile-mode +1))
+  :ensure t
+  :bind ("C-c s" . dired-sidebar-toggle-sidebar))
 
 (use-package projectile
-             :init
-             (setq projectile-mode-line-function
-                   '(lambda () (format " [%s]" (projectile-project-name))))
-             :config
-             (projectile-mode 1)
-             :bind-keymap
-             ("C-c p" . projectile-command-map))
+  :init
+  (setq projectile-mode-line-function
+        '(lambda () (format " [%s]" (projectile-project-name))))
+  :config
+  (projectile-mode 1)
+  :bind-keymap
+  ("C-c p" . projectile-command-map))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;    E V I L    ;;
 ;;;;;;;;;;;;;;;;;;;
 
 (use-package evil
-             :ensure t
-             :init
-             (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
-             (setq evil-want-keybinding nil)
-             (setq evil-want-C-u-scroll t)
-             (setq evil-want-C-i-jump nil)
-             :config
-             (evil-mode 1))
+  :ensure t
+  :init
+  (setq evil-want-integration t) ;; This is optional since it's already set to t by default.
+  (setq evil-want-keybinding nil)
+  (setq evil-want-C-u-scroll t)
+  (setq evil-want-C-i-jump nil)
+  :config
+  (evil-mode 1))
 
 (use-package evil-collection
-             :after evil
-             :ensure t
-             :config
-             (evil-collection-init))
+  :after evil
+  :ensure t
+  :config
+  (evil-collection-init))
 
 (use-package evil-commentary
-             :ensure t
-             :after evil
-             :init
-             (evil-commentary-mode))
+  :ensure t
+  :after evil
+  :init
+  (evil-commentary-mode))
 
 (use-package evil-org
-             :after org
-             :config
-             (add-hook 'org-mode-hook 'evil-org-mode)
-             (add-hook 'evil-org-mode-hook
-                       (lambda () (evil-org-set-key-theme))))
+  :after org
+  :config
+  (add-hook 'org-mode-hook 'evil-org-mode)
+  (add-hook 'evil-org-mode-hook
+            (lambda () (evil-org-set-key-theme)))
+  ;; Bonus: keybindings pour org-agenda si utilisé
+  (require 'evil-org-agenda)
+  (evil-org-agenda-set-keys))
 
 (use-package windmove
-             :bind (("C-c <down>" . windmove-down)
-                    ("C-c <up>" . windmove-up)
-                    ("C-c <left>" . windmove-left)
-                    ("C-c <right>" . windmove-right)))
+  :bind (("C-c <down>" . windmove-down)
+         ("C-c <up>" . windmove-up)
+         ("C-c <left>" . windmove-left)
+         ("C-c <right>" . windmove-right)))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; C O D I N G     ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
 (use-package rainbow-delimiters
-             :ensure t)
+  :ensure t)
 
 (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 
-;; (use-package prog-mode
-;; :ensure nil
-;; :hook ((prog-mode . rainbow-delimiters-mode)))
-
 (use-package smartparens
-             :diminish smartparens-mode ;; Do not show in modeline
-             :init
-             (require 'smartparens-config)
-             :config
-             (smartparens-global-mode t) ;; These options can be t or nil.
-             (show-smartparens-global-mode t)
-             (setq sp-show-pair-from-inside t)
-             :custom-face
-             (sp-show-pair-match-face ((t (:foreground "White")))) ;; Could also have :background "Grey" for example.
-             )
-
-;; (use-package projectile
-;;              :init
-;;              (projectile-mode 1)
-;;              :bind-keymap
-;;              ("C-c p" . projectile-command-map))
-
-;; (use-package magit
-;;   :bind ("C-x g" . magit-status))
+  :diminish smartparens-mode ;; Do not show in modeline
+  :init
+  (require 'smartparens-config)
+  :config
+  (smartparens-global-mode t) ;; These options can be t or nil.
+  (show-smartparens-global-mode t)
+  (setq sp-show-pair-from-inside t)
+  :custom-face
+  (sp-show-pair-match-face ((t (:foreground "White")))) ;; Could also have :background "Grey" for example.
+  )
 
 (use-package magit
-             :commands (magit-status)
-             :bind ("C-x g" . magit-status))
-
+  :commands (magit-status)
+  :bind ("C-x g" . magit-status))
 
 (use-package yasnippet
-             :ensure t
-             :commands yas-minor-mode
-             :hook (after-init . yas-minor-mode)
-             :config
-             (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets")
-             (yas-global-mode 1))
+  :config
+  (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets")
+  (yas-global-mode 1))
 
 (use-package yasnippet-snippets)
 
-;; (use-package company
-;;              :ensure t
-;;              :delight company-mode
-;;              :demand t
-;;              :init
-;;              (setq company-idle-delay 0.1
-;;                    company-minimum-prefix-length 1)
-;;              :bind (:map company-active-map
-;;                          ("C-n" . company-select-next)
-;;                          ("C-p" . company-select-previous))
-;;              :config
-;;              (global-company-mode))
-
-(use-package corfu
-             :init
-             (global-corfu-mode))
-
-(use-package cape
-             :init
-             (add-to-list 'completion-at-point-functions #'cape-file))
-
-(use-package flycheck
-             :ensure t)
+(use-package company
+  :ensure t
+  :delight company-mode
+  :demand t
+  :init
+  (setq company-idle-delay 0.1
+        company-minimum-prefix-length 1)
+  :bind (:map company-active-map
+              ("C-n" . company-select-next)
+              ("C-p" . company-select-previous))
+  :config
+  (global-company-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; L S P           ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
 (use-package lsp-mode
-             :commands lsp
-             :hook ((python-mode . lsp)
-                    (rust-mode . lsp)
-                    (js-mode . lsp))
-             :config
-             (setq lsp-headerline-breadcrumb-enable nil))
+  :commands lsp
+  :hook ((python-mode . lsp)
+         (rust-mode . lsp)
+         (js-mode . lsp))
+  :config
+  (setq lsp-headerline-breadcrumb-enable nil))
 
 (use-package lsp-ui
-             :commands lsp-ui-mode)
+  :commands lsp-ui-mode)
 
 (use-package consult-lsp)
+
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; R U S T         ;;
@@ -373,67 +331,63 @@
 
 ;; rustup component add rust-analyzer
 (use-package rustic
-             :config
-             (setq rustic-lsp-client 'lsp-mode))
-
-;; (use-package rust-mode
-;;   :config
-;;   (add-hook 'racer-mode-hook #'eldoc-mode)
-;;   (add-hook 'racer-mode-hook #'company-mode)
-;;   (define-key rust-mode-map (kbd "TAB") #'company-indent-or-complete-common)
-;;   (setq rust-format-on-save t)
-;;   (setq rust-indent-offset 4))
-
-(use-package cargo-mode
-             :config
-             (add-hook 'rust-mode-hook 'cargo-minor-mode))
+  :config
+  (setq rustic-lsp-client 'lsp-mode))
 
 (use-package restclient
-             :ensure t
-             :mode (("\\.http\\'" . restclient-mode)))
+  :ensure t
+  :mode (("\\.http\\'" . restclient-mode)))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; L I S P         ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
-(setq inferior-lisp-program "/usr/local/bin/sbcl"
-      sly-mrepl-pop-sylvester nil)
+(setq inferior-lisp-program "/usr/local/bin/sbcl" )
 
 (use-package sly-asdf
-             :ensure t
-             :defer t)
+  :ensure t
+  :defer t)
 
 (use-package sly-quicklisp
-             :ensure t
-             :defer t)
+  :ensure t
+  :defer t)
 
 (use-package sly
-             :ensure t
-             :defer t
-             :after (sly-asdf sly-quicklisp)
-             :custom-face
-             (sly-mrepl-output-face ((t (:foreground "sienna")))))
+  :ensure t
+  :defer t
+  :after (sly-asdf sly-quicklisp)
+  :config
+  (setq sly-mrepl-pop-sylvester nil)
+  :custom-face
+  (sly-mrepl-output-face ((t (:foreground "sienna")))))
+
+(add-to-list 'auto-mode-alist '("\\.asd\\'" . lisp-mode))
+
+(defun my/start-sly-if-asd ()
+  (when (and buffer-file-name
+             (string-match-p "\\.asd\\'" buffer-file-name))
+    (require 'sly)
+    (unless (sly-connected-p)
+      (sly))))
+
+(add-hook 'lisp-mode-hook #'my/start-sly-if-asd)
 
 (use-package paren-face
-             :defer)
-
-;; (use-package paredit
-;;   :defer)
+  :defer)
 
 (use-package paredit
-             :hook ((emacs-lisp-mode lisp-mode) . paredit-mode))
+  :hook
+  (emacs-lisp-mode  . paredit-mode)
+  (lisp-mode . paredit-mode))
 
 (use-package highlight-parentheses
-             :defer)
+  :defer)
 
 (defun my-lisp-mode-hook-fn ()
   (smartparens-mode 0)
   (paredit-mode 1)
   (paren-face-mode 1)
   (highlight-parentheses-mode 1))
-
-;; (add-hook 'lisp-mode-hook 'my-lisp-mode-hook-fn)
-;; (add-hook 'emacs-lisp-mode-hook 'my-lisp-mode-hook-fn)
 
 (dolist (hook '(lisp-mode-hook emacs-lisp-mode-hook))
   (add-hook hook #'my-lisp-mode-hook-fn))
