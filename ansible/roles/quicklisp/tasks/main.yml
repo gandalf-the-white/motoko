@@ -23,8 +23,6 @@
     mode: "0644"
 
 - name: Install Quicklisp (SBCL) non-interactively
-  # become: true
-  # become_user: "{{ item.name }}"
   ansible.builtin.command: >
     {{ lisp_cmd }}
     --noinform
@@ -34,6 +32,14 @@
     --quit
   args:
     creates: "/home/{{ item.name }}/quicklisp/setup.lisp"
+  loop: "{{ accounts }}"
+
+- name: Change permission
+  ansible.builtin.file:
+    dest: "/home/{{ item.name }}/quicklisp"
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
+    recurse: yes
   loop: "{{ accounts }}"
 
 - name: Ensure SBCL system rc exists
