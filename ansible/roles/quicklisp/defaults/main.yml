@@ -1,0 +1,24 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for ansible/roles/quicklisp
+packages:
+  - git
+  - sbcl
+
+# quicklisp_home: /home/spike/quicklisp
+quicklisp_bootstrap: /tmp/quicklisp.lisp
+quicklisp_url: https://beta.quicklisp.org/quicklisp.lisp
+
+lisp_cmd: sbcl
+# sbcl_system_rc: /home/spike/.sbclrc
+
+accounts:
+  - name: spike
+    uid: 1001
+    gid: 1001
+  - name: faye
+    uid: 1020
+    gid: 1020
+
+account: spike spiegel
+email: spike@gmail.com

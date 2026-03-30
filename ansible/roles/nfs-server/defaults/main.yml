@@ -6,8 +6,15 @@ packages:
   - sudo
   - emacs-nox
 
+# accounts:
+# - spike
+# - faye
 accounts:
-  - spike
-  - faye
+  - name: spike
+    uid: 1001
+    gid: 1010
+  - name: faye
+    uid: 1020
+    gid: 1020
 
 ext_if: "eth0"

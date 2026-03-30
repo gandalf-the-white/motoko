@@ -11,8 +11,12 @@ packages:
   - htop
 
 accounts:
-  - spike
-  - faye
+  - name: spike
+    uid: 1001
+    gid: 1001
+  - name: faye
+    uid: 1020
+    gid: 1020
 
 account: spike spiegel
 email: spike@gmail.com

@@ -17,3 +17,4 @@
 
   roles:
     - roles/nfs-client
+    - roles/quicklisp

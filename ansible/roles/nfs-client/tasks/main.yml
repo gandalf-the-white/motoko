@@ -31,49 +31,65 @@
     line: "%wheel ALL=(ALL) NOPASSWD: ALL"
     validate: "/usr/local/sbin/visudo -cf %s"
 
-- name: Add existing users to wheel group
-  ansible.builtin.user:
-    name: spike
-    groups: wheel
-    append: true
+# - name: Add group
+#   ansible.builtin.group:
+#     name: crew
+#     state: present
 
-- name: Add group
+# - name: Add group
+#   ansible.builtin.group:
+#     name: "{{ item }}"
+#     state: present
+#   loop: "{{ accounts }}"
+
+- name: Create group
   ansible.builtin.group:
-    name: crew
-    state: present
+    name: "{{ item.name }}"
+    gid: "{{ item.gid }}"
+  loop: "{{ accounts }}"
 
 - name: Create user
-  user:
-    name: "{{ item }}"
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    uid: "{{ item.uid }}"
+    group: "{{ item.gid }}"
     shell: /bin/tcsh
     state: present
     password: "{{ 'valentine' | password_hash('sha512') }}"
   loop: "{{ accounts }}"
 
-- name: Add user
+- name: Add existing users to wheel group
   ansible.builtin.user:
-    name: "{{ item }}"
-    comment: "{{ item }}"
-    groups: wheel, crew
-    state: present
+    name: "{{ item.name }}"
+    groups: wheel
+    append: true
   loop: "{{ accounts }}"
 
 - name: Create directory
   file:
-    path: "/mnt/nfs/{{ item }}"
-    owner: "{{ item }}"
-    group: "{{ item }}"
+    path: "/mnt/nfs"
+    owner: root
+    group: wheel
+    state: directory
+
+- name: Create directory
+  file:
+    path: "/mnt/nfs/{{ item.name }}"
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
     state: directory
   loop: "{{ accounts }}"
 
 - name: Mount directories
   ansible.posix.mount:
-    src: "{{ nfs }}:/nfs/{{ item }}"
-    path: "/mnt/nfs/{{ item }}"
+    src: "{{ nfs }}:/nfs/{{ item.name }}"
+    path: "/mnt/nfs/{{ item.name }}"
     state: mounted
     fstype: nfs
     opts: rw
   loop: "{{ accounts }}"
+  tags:
+    - mount
 
 - name: Enable nfs at boot
   community.general.sysrc:
@@ -82,27 +98,35 @@
 
 - name: Update tcsh prompt
   ansible.builtin.replace:
-    path: "/home/{{ item }}/.cshrc"
+    path: "/home/{{ item.name }}/.cshrc"
     regexp: '^\t*set\s+prompt\s*=.*'
     replace: '\tset prompt="\\n%{\033[0;32m%}%n@%m:%{\033[0;33m%}%~%{\033[1;30m%}>%{\033[1;37m%} "'
-    owner: "{{ item }}"
-    group: "{{ item }}"
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
   loop: "{{ accounts }}"
 
 - name: Ensure emacs directory exists
   ansible.builtin.file:
-    path: "/home/{{ item }}/.emacs.d"
+    path: "/home/{{ item.name }}/.emacs.d"
     state: directory
-    owner: "{{ item }}"
-    group: "{{ item }}"
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
     mode: "0755"
   loop: "{{ accounts }}"
 
 - name: Copy init.el
   ansible.builtin.template:
     src: init-v6.el.j2
-    dest: "/home/{{ item }}/.emacs.d/init.el"
-    owner: "{{ item }}"
-    group: "{{ item }}"
+    dest: "/home/{{ item.name }}/.emacs.d/init.el"
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
     mode: "0644"
+  loop: "{{ accounts }}"
+
+- name: Create a symbolic link
+  ansible.builtin.file:
+    src: "/mnt/nfs/{{ item.name }}/"
+    dest: "/home/{{ item.name }}/projects"
+    owner: "{{ item.uid }}"
+    state: link
   loop: "{{ accounts }}"

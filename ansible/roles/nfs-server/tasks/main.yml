@@ -50,19 +50,28 @@
     name: crew
     state: present
 
+- name: Create group
+  ansible.builtin.group:
+    name: "{{ item.name }}"
+    gid: "{{ item.gid }}"
+    state: present
+  loop: "{{ accounts }}"
+
 - name: Add user
   ansible.builtin.user:
-    name: "{{ item }}"
-    comment: "{{ item }}"
+    name: "{{ item.name }}"
+    uid: "{{ item.uid }}"
+    group: "{{ item.gid }}"
+    comment: "{{ item.name }}"
     groups: crew, wheel
     state: present
   loop: "{{ accounts }}"
 
 - name: Create directory account
   file:
-    path: "/nfs/{{ item }}"
-    owner: "{{ item }}"
-    group: "{{ item }}"
+    path: "/nfs/{{ item.name }}"
+    owner: "{{ item.name }}"
+    group: "{{ item.uid }}"
     mode: "0700"
     state: directory
     recurse: yes
@@ -122,9 +131,9 @@
 
 - name: Update tcsh prompt
   ansible.builtin.replace:
-    path: "/home/{{ item }}/.cshrc"
+    path: "/home/{{ item.name }}/.cshrc"
     regexp: '^\t*set\s+prompt\s*=.*'
     replace: '\tset prompt="\\n%{\033[0;32m%}%n@%m:%{\033[0;33m%}%~%{\033[1;30m%}>%{\033[1;37m%} "'
-    owner: "{{ item }}"
-    group: "{{ item }}"
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
   loop: "{{ accounts }}"
