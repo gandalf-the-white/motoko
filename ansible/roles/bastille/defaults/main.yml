@@ -1,0 +1,24 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for ansible/roles/bastille
+packages:
+  - bastille
+  - ffmpeg
+  - emacs-nox
+  - bash
+
+bastille_release: "15.0-RELEASE"
+
+ext_if: "eth0"
+
+admin_ip: "10.9.0.30"
+
+jails:
+  - name: "jail-hls"
+    octet: "190"
+    packages: ["nginx"]
+    ports: ["80", "443"]
+  - name: "jail-nfs"
+    octet: "191"
+    packages: ["tree"]
+    ports: ["111", "2049"]

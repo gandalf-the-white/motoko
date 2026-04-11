@@ -1,0 +1,21 @@
+---
+- name: install dev
+  hosts: all
+  become: true
+
+  vars:
+    hostname: "${hostname}"
+    prefix: "${prefix}"
+    http_proxy: "${proxy}"
+    https_proxy: "${proxy}"
+    no_proxy: "${noproxy}"
+
+  environment:
+    http_proxy: "${proxy}"
+    https_proxy: "${proxy}"
+    no_proxy: "${noproxy}"
+
+  roles:
+    - roles/bastille
+    # - roles/nfs-client
+    # - roles/quicklisp

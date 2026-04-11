@@ -49,6 +49,31 @@ module "nfs" {
   privkeyctn  = var.privkeyctn
 }
 
+###################################################################################
+## M T A K S
+####################################################################################
+
+module "mtask" {
+  source      = "./modules/mtask"
+  name        = "mtask-server"
+  prefix      = var.prefix # VLAN 200
+  bridge      = var.bridge
+  octet       = "147"
+  vlan        = 200
+  memory      = 2048
+  nameserver  = var.nameserver
+  target_node = var.target_node
+  clone       = "freebsd-150-tmpl"
+  size        = 100
+  storage     = var.storage
+  cloudinit   = var.cloudinit
+  proxy       = var.proxy
+  userctn     = var.userctn
+  publkeyctn  = var.publkeyctn
+  privkeyctn  = var.privkeyctn
+}
+
+
 ####################################################################################
 ## O U T P U T
 ####################################################################################
@@ -61,4 +86,9 @@ output "dev_server_ip_address" {
 output "nfs_server_ip_address" {
   description = "NFS Server IP Address"
   value       = module.nfs
+}
+
+output "mtask_server_ip_address" {
+  description = "MTASK Server IP Address"
+  value       = module.mtask
 }
