@@ -1,10 +1,9 @@
-
 ####################################################################################
 ##  RESOURCES
 ####################################################################################
 
 resource "proxmox_vm_qemu" "server" {
-  description = "Deploiement VM Ubuntu on Proxmox"
+  description = "Deploiement VM BSD on Proxmox"
   name        = var.name
   target_node = var.target_node
   clone       = var.clone
@@ -21,7 +20,7 @@ resource "proxmox_vm_qemu" "server" {
     sockets = 1
   }
 
-  tags = "Bsd;Mtask"
+  tags = "Bsd;Jail"
 
   cicustom = "user=${var.cloudinit}:snippets/cloudinitbsd.yaml"
 
@@ -77,7 +76,7 @@ resource "local_file" "inventory" {
       privkeyctn = var.privkeyctn
       name       = var.name
   })
-  filename        = "./ansible/inventory-mtask.yaml"
+  filename        = "./ansible/inventory-storage.yaml"
   file_permission = "0644"
 }
 
@@ -86,17 +85,17 @@ resource "local_file" "playbook" {
   content = templatefile("${path.module}/manifests/playbook-template.yaml",
     {
       hostname = var.name
-      prefix   = "${var.prefix}"
+      prefix   = var.prefix
       proxy    = var.proxy
       noproxy  = "${var.prefix}.0/24"
   })
-  filename        = "./ansible/playbook-mtask.yaml"
+  filename        = "./ansible/playbook-storage.yaml"
   file_permission = "0644"
 }
 
 resource "null_resource" "play_ansible" {
   provisioner "local-exec" {
-    command = "ansible-playbook -i ansible/inventory-mtask.yaml ansible/playbook-mtask.yaml"
+    command = "ansible-playbook -i ansible/inventory-storage.yaml ansible/playbook-storage.yaml"
   }
   depends_on = [
     proxmox_vm_qemu.server,
@@ -109,7 +108,7 @@ resource "null_resource" "play_ansible" {
 ##  OUTPUT
 ####################################################################################
 
-output "mtask_server_ip_address" {
-  description = "MTASK IP Address"
+output "storage_server_ip_address" {
+  description = "Storage IP Address"
   value       = proxmox_vm_qemu.server.default_ipv4_address
 }

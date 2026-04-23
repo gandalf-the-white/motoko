@@ -12,11 +12,21 @@ packages:
 
 accounts:
   - name: spike
-    uid: 1001
-    gid: 1001
+    uid: 1010
+    gid: 1010
+  # - name: faye
+  #   uid: 1020
+  #   gid: 1020
+
+new_groups:
+  - name: spike
+    gid: 1010
   - name: faye
-    uid: 1020
     gid: 1020
+  - name: crew
+    gid: 1030
+
+mount_path: /srv/nfs
 
 account: spike spiegel
 email: spike@gmail.com

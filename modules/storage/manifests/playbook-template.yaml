@@ -1,11 +1,12 @@
 ---
-- name: install dev
+- name: install Storage
   hosts: all
   become: true
 
   vars:
     hostname: "${hostname}"
     prefix: "${prefix}"
+    subnet: "${prefix}.0"
     http_proxy: "${proxy}"
     https_proxy: "${proxy}"
     no_proxy: "${noproxy}"
@@ -16,6 +17,4 @@
     no_proxy: "${noproxy}"
 
   roles:
-    - roles/bastille
-    # - roles/nfs-client
-    # - roles/quicklisp
+    - roles/storage

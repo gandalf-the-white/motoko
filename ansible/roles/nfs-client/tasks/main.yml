@@ -12,12 +12,6 @@
     line: 'hostname="{{ hostname }}"'
     create: yes
 
-# - name: Set hostname with sysrc
-#   ansible.builtin.command: sysrc hostname={{ hostname }}
-
-# - name: Apply hostname immediately
-#   ansible.builtin.command: hostname {{ hostname }}
-
 - name: Install packages
   community.general.pkgng:
     name: "{{ item }}"
@@ -46,7 +40,7 @@
   ansible.builtin.group:
     name: "{{ item.name }}"
     gid: "{{ item.gid }}"
-  loop: "{{ accounts }}"
+  loop: "{{ new_groups }}"
 
 - name: Create user
   ansible.builtin.user:
@@ -82,11 +76,11 @@
 
 - name: Mount directories
   ansible.posix.mount:
-    src: "{{ nfs }}:/nfs/{{ item.name }}"
+    src: "{{ nfs }}:{{ mount_path }}/{{ item.name }}"
     path: "/mnt/nfs/{{ item.name }}"
     state: mounted
     fstype: nfs
-    opts: rw
+    opts: "rw,vers=3,tcp,soft,timeo=10,retrans=3"
   loop: "{{ accounts }}"
   tags:
     - mount

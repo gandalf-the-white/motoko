@@ -9,7 +9,7 @@ module "dev" {
   prefix      = var.prefix # VLAN 200
   bridge      = var.bridge
   octet       = "145"
-  nfs         = "146"
+  nfs         = "210"
   vlan        = 200
   memory      = 4096
   nameserver  = var.nameserver
@@ -49,22 +49,22 @@ module "nfs" {
   privkeyctn  = var.privkeyctn
 }
 
-###################################################################################
-## M T A K S
+####################################################################################
+## N F S  S T O R A G E
 ####################################################################################
 
-module "mtask" {
-  source      = "./modules/mtask"
-  name        = "mtask-server"
+module "storage" {
+  source      = "./modules/storage"
+  name        = "nfs-server"
   prefix      = var.prefix # VLAN 200
   bridge      = var.bridge
-  octet       = "147"
+  octet       = "64"
   vlan        = 200
-  memory      = 2048
+  memory      = 4096
   nameserver  = var.nameserver
   target_node = var.target_node
   clone       = "freebsd-150-tmpl"
-  size        = 100
+  size        = 30
   storage     = var.storage
   cloudinit   = var.cloudinit
   proxy       = var.proxy
@@ -72,7 +72,6 @@ module "mtask" {
   publkeyctn  = var.publkeyctn
   privkeyctn  = var.privkeyctn
 }
-
 
 ####################################################################################
 ## O U T P U T
@@ -88,7 +87,7 @@ output "nfs_server_ip_address" {
   value       = module.nfs
 }
 
-output "mtask_server_ip_address" {
-  description = "MTASK Server IP Address"
-  value       = module.mtask
+output "storage_server_ip_address" {
+  description = "Storage Server IP Address"
+  value       = module.storage
 }
