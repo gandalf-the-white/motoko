@@ -304,4 +304,13 @@
     line: '	set prompt="%{\033[0m%}\n%{\033[0;32m%}%n@%m%{\033[0m%}:%{\033[0;33m%}%~%{\033[0m%} %# "'
     create: true
   loop: "{{ jails | subelements('accounts', skip_missing=True) }}"
+
+- name: Update tcsh prompt
+  ansible.builtin.replace:
+    path: "/home/{{ item.1.name }}/.cshrc"
+    regexp: '^\t*set\s+prompt\s*=.*'
+    replace: '\tset prompt="\\n%{\033[0;32m%}%n@%m:%{\033[0;33m%}%~%{\033[1;30m%}>%{\033[1;37m%} "'
+    owner: "{{ item.1.uid }}"
+    group: "{{ item.1.gid }}"
+  loop: "{{ jails | subelements('accounts', skip_missing=True) }}"
   tags: prompt
