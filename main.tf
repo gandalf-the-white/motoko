@@ -55,12 +55,12 @@ module "nfs" {
 
 module "storage" {
   source      = "./modules/storage"
-  name        = "nfs-server"
+  name        = "storage-server"
   prefix      = var.prefix # VLAN 200
   bridge      = var.bridge
-  octet       = "64"
+  octet       = "144"
   vlan        = 200
-  memory      = 4096
+  memory      = 2048
   nameserver  = var.nameserver
   target_node = var.target_node
   clone       = "freebsd-150-tmpl"
