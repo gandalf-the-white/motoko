@@ -86,6 +86,7 @@ resource "local_file" "playbook" {
     {
       hostname = var.name
       prefix   = var.prefix
+      admin-ip = var.adminip
       proxy    = var.proxy
       noproxy  = "${var.prefix}.0/24"
   })

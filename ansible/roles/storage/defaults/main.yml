@@ -3,13 +3,18 @@
 # defaults file for ansible/roles/storage
 packages:
   - bastille
+  - tree
+  - pftop
 
-bastille_interface: "eth0"
+ext_if: eth0
+bastille_interface: bastille0
 bastille_release: "15.0-RELEASE"
 
 jails:
   - name: nfs-server
     octet: "210"
+    prefix: "10.17.89"
+    subnet: "10.17.89.0/24"
     packages:
       - htop
       - tree
@@ -33,6 +38,8 @@ jails:
 
   - name: nats-server
     octet: "211"
+    prefix: "10.17.89"
+    subnet: "10.17.89.0/24"
     packages:
       - htop
       - nats-server
@@ -82,5 +89,5 @@ nfs_exports:
   - name: kube
     mode: "1777"
     owner: 65534
-    group: 65534
-    export_opts: "-mapall=nobody -network 192.188.200.0 -mask 255.255.255.0"
+    group: 65533
+    export_opts: "-mapall=nobody -alldirs -network 192.188.200.0 -mask 255.255.255.0"
