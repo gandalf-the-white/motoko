@@ -292,7 +292,7 @@
 - name: Tune nfsd threads
   community.general.sysrc:
     name: nfs_server_flags
-    value: "-u -t 8"
+    value: "-u -t -n 8 "
 
 - name: Enable mount at boot
   community.general.sysrc:
@@ -302,7 +302,7 @@
 - name: Allow non-reserved ports for mountd
   community.general.sysrc:
     name: mountd_flags
-    value: "-n"
+    value: "-n -p 635"
 
 - name: Enable rpcbind at boot
   community.general.sysrc:

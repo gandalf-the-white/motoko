@@ -26,11 +26,15 @@ rdr pass on $ext_if proto {{ p.proto }} from any to ($ext_if) port {{ p.port }} 
 block in all
 
 {# NFSv4 #}
-pass in quick on $ext_if proto tcp from $nfs_net to ($ext_if) port 2049 keep state
+{# pass in quick on $ext_if proto tcp from $nfs_net to ($ext_if) port 2049 keep state #}
 
 {# rpcbind (nécessaire) #}
-pass in quick on $ext_if proto tcp from $nfs_net to ($ext_if) port 111 keep state
-pass in quick on $ext_if proto udp from $nfs_net to ($ext_if) port 111 keep state
+{# pass in quick on $ext_if proto tcp from $nfs_net to ($ext_if) port 111 keep state #}
+{# pass in quick on $ext_if proto udp from $nfs_net to ($ext_if) port 111 keep state #}
+
+{# mountd (nécessaire) #}
+pass in quick on $ext_if proto tcp from $nfs_net to ($ext_if) port {111,635,2049} keep state
+pass in quick on $ext_if proto udp from $nfs_net to ($ext_if) port {111,635} keep state
 
 {% for jail in jails %}
 {# {{ jail.name }} Configuration #}

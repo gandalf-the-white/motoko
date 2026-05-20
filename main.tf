@@ -9,7 +9,7 @@ module "dev" {
   prefix      = var.prefix # VLAN 200
   bridge      = var.bridge
   octet       = "145"
-  nfs         = "210"
+  nfs         = "144"
   vlan        = 200
   memory      = 4096
   nameserver  = var.nameserver
