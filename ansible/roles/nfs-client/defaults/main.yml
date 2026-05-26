@@ -9,6 +9,7 @@ packages:
   - git-lite
   - emacs-nox
   - htop
+  - python3
   - rust
   - rust-analyzer
 
