@@ -100,10 +100,20 @@
   loop: "{{ accounts }}"
   tags: link
 
-- name: Enable nfs at boot
+# - name: Enable nfs at boot
+#   community.general.sysrc:
+#     name: nfs_client_enable
+#     value: "YES"
+
+- name: Enable nfsuserd
   community.general.sysrc:
-    name: nfs_client_enable
+    name: nfsuserd_enable
     value: "YES"
+
+- name: Start nfsuserd
+  ansible.builtin.service:
+    name: nfsuserd
+    state: started
 
 - name: Update tcsh prompt
   ansible.builtin.replace:

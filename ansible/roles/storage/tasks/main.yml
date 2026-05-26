@@ -191,13 +191,31 @@
         state: directory
       loop: "{{ nfs_exports }}"
 
-    - name: Create nullfs mount points on host
+    # - name: Create nullfs mount points on host
+    #   ansible.builtin.file:
+    #     path: "/srv/nfs/{{ item.name }}"
+    #     owner: root
+    #     group: wheel
+    #     mode: "0755"
+    #     state: directory
+    #   loop: "{{ nfs_exports }}"
+
+    - name: Create NFS export directories
       ansible.builtin.file:
-        path: "/srv/nfs/{{ item.name }}"
+        path: /srv/nfs
+        state: directory
         owner: root
         group: wheel
         mode: "0755"
+
+    - name: Create NFS export directories
+      ansible.builtin.file:
+        path: "/srv/nfs/{{ item.name }}"
         state: directory
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        mode: "0700"
+      # loop: "{{ accounts }}"
       loop: "{{ nfs_exports }}"
 
     - name: Mount nullfs exports on host

@@ -91,6 +91,9 @@
                (when (facep 'doom-modeline-bar-inactive)
                  (set-face-attribute 'doom-modeline-bar-inactive nil :background 'unspecified)))
              (lv/fix-doom-modeline-faces)
+             (add-hook 'doom-modeline-mode-hook #'lv/fix-doom-modeline-faces)
+             (add-hook 'after-init-hook #'lv/fix-doom-modeline-faces)
+             (run-at-time 0.5 nil #'lv/fix-doom-modeline-faces)
              (advice-add 'load-theme :after #'lv/fix-doom-modeline-faces))
 
 (menu-bar-mode -1)
@@ -172,6 +175,8 @@
 
              ;; Configuration rust-analyzer via Eglot.
              ;; Ces clés sont envoyées au serveur LSP.
+             ;; Important : dans une plist JSON d'Eglot, nil devient JSON null.
+             ;; Pour envoyer false à rust-analyzer, il faut utiliser :json-false.
              (setq-default eglot-workspace-configuration
                            '(:rust-analyzer
                              (:cargo (:allFeatures t)
@@ -182,7 +187,7 @@
                                            :closingBraceHints (:enable t)
                                            :closureReturnTypeHints (:enable "always")
                                            :lifetimeElisionHints (:enable "skip_trivial")
-                                           :parameterHints (:enable json-false)
+                                           :parameterHints (:enable :json-false)
                                            :typeHints (:enable t))))))
 
 (use-package flymake
