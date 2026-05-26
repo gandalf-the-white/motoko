@@ -15,9 +15,9 @@ nfs_client_mask: "255.255.255.0"
 nfs_client_cidr: "192.188.200.0/24"
 
 # Ports RPC fixes pour pouvoir filtrer proprement avec pf
-mountd_port: 892
-rpc_statd_port: 662
-rpc_lockd_port: 32803
+# mountd_port: 892
+# rpc_statd_port: 662
+# rpc_lockd_port: 32803
 
 jails:
   - name: nfs-server

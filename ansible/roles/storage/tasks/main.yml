@@ -218,92 +218,51 @@
 #     state: directory
 
 ######################################
-
-# NFS / RPC CONFIGURATION
-
+# NFSv4 CONFIGURATION
 ######################################
 
-- name: NFS configuration
+- name: NFSv4 configuration
   tags: nfs
   block:
-    - name: Enable rpcbind
-      community.general.sysrc:
-        name: rpcbind_enable
-        value: "YES"
-
-    - name: Configure mountd with fixed port
-      community.general.sysrc:
-        name: mountd_flags
-        value: "-n -p 892"
-
-    - name: Enable and configure rpc.statd
-      community.general.sysrc:
-        name: rpc_statd_enable
-        value: "YES"
-
-    - name: Set rpc.statd port
-      community.general.sysrc:
-        name: rpc_statd_flags
-        value: "-p 1003"
-
-    - name: Enable and configure rpc.lockd
-      community.general.sysrc:
-        name: rpc_lockd_enable
-        value: "YES"
-
-    - name: Set rpc.lockd port
-      community.general.sysrc:
-        name: rpc_lockd_flags
-        value: "-p 894"
-
     - name: Enable NFS server
       community.general.sysrc:
         name: nfs_server_enable
         value: "YES"
 
-    - name: Configure NFS server flags (TCP+UDP, threads)
+    - name: Enable NFSv4 server
+      community.general.sysrc:
+        name: nfsv4_server_enable
+        value: "YES"
+
+    - name: Enable nfsuserd for NFSv4 id mapping
+      community.general.sysrc:
+        name: nfsuserd_enable
+        value: "YES"
+
+    - name: Configure NFS server TCP only
       community.general.sysrc:
         name: nfs_server_flags
-        value: "-u -t -n 8"
+        value: "-t -n 8"
 
-# OPTION: NFSv4 only (décommente si tu veux simplifier)
-# - name: Enable NFSv4 only
-#   community.general.sysrc:
-#     name: nfsv4_server_enable
-#     value: "YES"
-
-######################################
-# EXPORTS
-######################################
-
-- name: Exports
-  tags: exports
-  block:
-    - name: Deploy exports
-      ansible.builtin.template:
-        src: exports.j2
-        dest: /etc/exports
-        owner: root
-        group: wheel
-        mode: "0644"
-      notify: reload mountd
-
-    - name: Enable NFS host services
+    - name: Disable rpcbind
       community.general.sysrc:
-        name: "{{ item.name }}"
-        value: "{{ item.value }}"
-      loop:
-        - { name: rpcbind_enable, value: "YES" }
-        - { name: nfs_server_enable, value: "YES" }
-        - { name: nfsv4_server_enable, value: "NO" }
-        - { name: mountd_enable, value: "YES" }
-        - { name: rpc_statd_enable, value: "YES" }
-        - { name: rpc_lockd_enable, value: "YES" }
-        - { name: nfs_server_flags, value: "-u -t -n 8" }
-        - { name: mountd_flags, value: "-n -p {{ mountd_port }}" }
-        - { name: rpc_statd_flags, value: "-p {{ rpc_statd_port }}" }
-        - { name: rpc_lockd_flags, value: "-p {{ rpc_lockd_port }}" }
-      notify: restart nfs services
+        name: rpcbind_enable
+        value: "NO"
+
+    - name: Disable mountd
+      community.general.sysrc:
+        name: mountd_enable
+        value: "NO"
+
+    - name: Disable rpc.statd
+      community.general.sysrc:
+        name: rpc_statd_enable
+        value: "NO"
+
+    - name: Disable rpc.lockd
+      community.general.sysrc:
+        name: rpc_lockd_enable
+        value: "NO"
 
     - name: Allow non-reserved ports for nfsd
       ansible.posix.sysctl:
@@ -311,16 +270,121 @@
         value: "0"
         state: present
 
-    - name: Ensure NFS services are running
+    - name: Deploy NFSv4 exports
+      ansible.builtin.template:
+        src: exports.j2
+        dest: /etc/exports
+        owner: root
+        group: wheel
+        mode: "0644"
+      notify: restart nfs4 services
+
+    - name: Ensure NFSv4 services are running
       ansible.builtin.service:
         name: "{{ item }}"
         state: started
       loop:
-        - rpcbind
-        - statd
-        - lockd
+        - nfsuserd
         - nfsd
-        - mountd
+
+    # - name: NFS configuration
+    #   tags: nfs
+    #   block:
+    #     - name: Enable rpcbind
+    #       community.general.sysrc:
+    #         name: rpcbind_enable
+    #         value: "YES"
+
+    #     - name: Configure mountd with fixed port
+    #       community.general.sysrc:
+    #         name: mountd_flags
+    #         value: "-n -p 892"
+
+    #     - name: Enable and configure rpc.statd
+    #       community.general.sysrc:
+    #         name: rpc_statd_enable
+    #         value: "YES"
+
+    #     - name: Set rpc.statd port
+    #       community.general.sysrc:
+    #         name: rpc_statd_flags
+    #         value: "-p 1003"
+
+    #     - name: Enable and configure rpc.lockd
+    #       community.general.sysrc:
+    #         name: rpc_lockd_enable
+    #         value: "YES"
+
+    #     - name: Set rpc.lockd port
+    #       community.general.sysrc:
+    #         name: rpc_lockd_flags
+    #         value: "-p 894"
+
+    #     - name: Enable NFS server
+    #       community.general.sysrc:
+    #         name: nfs_server_enable
+    #         value: "YES"
+
+    #     - name: Configure NFS server flags (TCP+UDP, threads)
+    #       community.general.sysrc:
+    #         name: nfs_server_flags
+    #         value: "-u -t -n 8"
+
+    # OPTION: NFSv4 only (décommente si tu veux simplifier)
+    # - name: Enable NFSv4 only
+    #   community.general.sysrc:
+    #     name: nfsv4_server_enable
+    #     value: "YES"
+
+    ######################################
+    # EXPORTS
+    ######################################
+
+    # - name: Exports
+    #   tags: exports
+    #   block:
+    #     - name: Deploy exports
+    #       ansible.builtin.template:
+    #         src: exports.j2
+    #         dest: /etc/exports
+    #         owner: root
+    #         group: wheel
+    #         mode: "0644"
+    #       notify: reload mountd
+
+    # - name: Enable NFS host services
+    #   community.general.sysrc:
+    #     name: "{{ item.name }}"
+    #     value: "{{ item.value }}"
+    #   loop:
+    #     - { name: rpcbind_enable, value: "YES" }
+    #     - { name: nfs_server_enable, value: "YES" }
+    #     - { name: nfsv4_server_enable, value: "NO" }
+    #     - { name: mountd_enable, value: "YES" }
+    #     - { name: rpc_statd_enable, value: "YES" }
+    #     - { name: rpc_lockd_enable, value: "YES" }
+    #     - { name: nfs_server_flags, value: "-u -t -n 8" }
+    #     - { name: mountd_flags, value: "-n -p {{ mountd_port }}" }
+    #     - { name: rpc_statd_flags, value: "-p {{ rpc_statd_port }}" }
+    #     - { name: rpc_lockd_flags, value: "-p {{ rpc_lockd_port }}" }
+    #   notify: restart nfs services
+
+    # - name: Allow non-reserved ports for nfsd
+    #   ansible.posix.sysctl:
+    #     name: vfs.nfsd.nfs_privport
+    #     value: "0"
+    #     state: present
+
+    # - name: Ensure NFS services are running
+    #   ansible.builtin.service:
+    #     name: "{{ item }}"
+    #     state: started
+    #   loop:
+    #     - rpcbind
+    #     - statd
+    #     - lockd
+    #     - nfsd
+    #     - mountd
 
     - name: Restart jail services
       ansible.builtin.command: "bastille service {{ item.0.name }} {{ item.1 }} restart"

@@ -8,6 +8,9 @@
 {#   {{ export.export_opts }} #}
 {# {% endfor %} #}
 
+
+V4: /srv/nfs
+
 {% for export in nfs_exports %}
 {{ "/srv/nfs/" + export.name }} {{ export.export_opts }}
 {% endfor %}

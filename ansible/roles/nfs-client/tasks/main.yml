@@ -74,16 +74,23 @@
     state: directory
   loop: "{{ accounts }}"
 
-- name: Mount directories
+- name: Mount NFSv4 directories
   ansible.posix.mount:
-    src: "{{ nfs }}:{{ mount_path }}/{{ item.name }}"
+    src: "{{ nfs }}:/{{ item.name }}"
     path: "/mnt/nfs/{{ item.name }}"
     state: mounted
     fstype: nfs
-    opts: "rw,vers=3,tcp,soft,timeo=10,retrans=3"
+    opts: "rw,nfsv4,tcp,hard"
   loop: "{{ accounts }}"
-  tags:
-    - mount
+
+- name: Create a symbolic link
+  ansible.builtin.file:
+    src: "/mnt/nfs/{{ item.name }}/"
+    dest: "/home/{{ item.name }}/projects"
+    state: link
+    force: true
+  loop: "{{ accounts }}"
+  tags: link
 
 - name: Enable nfs at boot
   community.general.sysrc:
@@ -98,6 +105,10 @@
     owner: "{{ item.uid }}"
     group: "{{ item.gid }}"
   loop: "{{ accounts }}"
+
+#################################################
+#  E M A C S
+#################################################
 
 - name: Ensure emacs directory exists
   ansible.builtin.file:
@@ -115,12 +126,4 @@
     owner: "{{ item.uid }}"
     group: "{{ item.gid }}"
     mode: "0644"
-  loop: "{{ accounts }}"
-
-- name: Create a symbolic link
-  ansible.builtin.file:
-    src: "/mnt/nfs/{{ item.name }}/"
-    dest: "/home/{{ item.name }}/projects"
-    owner: "{{ item.uid }}"
-    state: link
   loop: "{{ accounts }}"

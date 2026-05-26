@@ -26,7 +26,7 @@ new_groups:
   - name: crew
     gid: 1030
 
-mount_path: /srv/nfs
+# mount_path: /srv/nfs
 
 account: spike spiegel
 email: spike@gmail.com

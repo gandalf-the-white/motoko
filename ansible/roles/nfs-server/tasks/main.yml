@@ -25,10 +25,25 @@
     line: "%wheel ALL=(ALL) NOPASSWD: ALL"
     validate: "/usr/local/sbin/visudo -cf %s"
 
-- name: Enable nfs at boot
+# - name: Enable nfs at boot
+#   community.general.sysrc:
+#     name: nfs_server_enable
+#     value: "YES"
+
+- name: Enable NFSv4 server
   community.general.sysrc:
-    name: nfs_server_enable
+    name: nfsv4_server_enable
     value: "YES"
+
+- name: Enable NFSv4 idmapping
+  community.general.sysrc:
+    name: nfsv4_server_only
+    value: "YES"
+
+- name: Configure nfsd flags
+  community.general.sysrc:
+    name: nfs_server_flags
+    value: "-u -t -n 8"
 
 - name: Enable mount at boot
   community.general.sysrc:

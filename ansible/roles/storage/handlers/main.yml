@@ -8,28 +8,36 @@
 #   ansible.builtin.command: service mountd reload
 #   listen: reload mountd
 
-- name: restart nfs services
+- name: restart nfs4 services
   ansible.builtin.service:
     name: "{{ item }}"
     state: restarted
   loop:
-    - rpcbind
-    - statd
-    - lockd
+    - nfsuserd
     - nfsd
-    - mountd
-  listen: restart nfs services
+  listen: restart nfs4 services
+# - name: restart nfs services
+#   ansible.builtin.service:
+#     name: "{{ item }}"
+#     state: restarted
+#   loop:
+#     - rpcbind
+#     - statd
+#     - lockd
+#     - nfsd
+#     - mountd
+#   listen: restart nfs services
 
-- name: reload mountd
-  ansible.builtin.service:
-    name: mountd
-    state: reloaded
+# - name: reload mountd
+#   ansible.builtin.service:
+#     name: mountd
+#     state: reloaded
 
-- name: restart nfs stack
-  ansible.builtin.service:
-    name: "{{ item }}"
-    state: restarted
-  loop:
-    - rpcbind
-    - nfsd
-    - mountd
+# - name: restart nfs stack
+#   ansible.builtin.service:
+#     name: "{{ item }}"
+#     state: restarted
+#   loop:
+#     - rpcbind
+#     - nfsd
+#     - mountd
