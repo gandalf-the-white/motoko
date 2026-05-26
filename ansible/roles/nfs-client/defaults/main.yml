@@ -9,6 +9,8 @@ packages:
   - git-lite
   - emacs-nox
   - htop
+  - rust
+  - rust-analyzer
 
 accounts:
   - name: spike

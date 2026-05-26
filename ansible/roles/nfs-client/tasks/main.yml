@@ -14,9 +14,17 @@
 
 - name: Install packages
   community.general.pkgng:
-    name: "{{ item }}"
+    name: "{{ packages }}"
     state: present
-  loop: "{{ packages }}"
+
+- name: Check Rust version
+  ansible.builtin.command: rustc --version
+  register: rust_version
+  changed_when: false
+
+- name: Show Rust version
+  ansible.builtin.debug:
+    var: rust_version.stdout
 
 - name: Allow wheel group sudo without password
   ansible.builtin.lineinfile:
