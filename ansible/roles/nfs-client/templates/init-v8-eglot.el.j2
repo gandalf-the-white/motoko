@@ -1,0 +1,311 @@
+;;; init-v7.el.j2 --- Configuration Emacs pour Rust -*- lexical-binding: t; -*-
+
+;;; Bootstrap package.el / use-package
+
+(require 'package)
+
+(setq package-enable-at-startup nil
+      package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("gnu"   . "https://elpa.gnu.org/packages/")
+                         ("org"   . "https://orgmode.org/elpa/")))
+
+(package-initialize)
+
+(unless package-archive-contents
+  (package-refresh-contents))
+
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+
+(eval-and-compile
+ (require 'use-package)
+ (setq use-package-always-ensure t
+       use-package-expand-minimally t
+       use-package-compute-statistics t))
+
+(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
+
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(load custom-file 'noerror)
+
+;;; Maintenance
+
+(use-package auto-package-update
+             :custom
+             (auto-package-update-delete-old-versions t)
+             (auto-package-update-hide-results t)
+             :config
+             (auto-package-update-maybe))
+
+;;; Performance
+
+(setq gc-cons-threshold (* 50 1000 1000)
+      gc-cons-percentage 0.6
+      read-process-output-max (* 1024 1024))
+
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq gc-cons-threshold (* 2 1000 1000)
+                  gc-cons-percentage 0.1)))
+
+;;; Identité
+
+(setq user-full-name "spike spiegel"
+      user-mail-address "spike@gmail.com")
+
+;;; Encodage
+
+(set-language-environment "UTF-8")
+(prefer-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+
+(setq locale-coding-system 'utf-8
+      default-file-name-coding-system 'utf-8)
+
+;;; UI
+
+(use-package zenburn-theme
+             :config
+             (load-theme 'zenburn t))
+
+(use-package doom-modeline
+             :hook (after-init . doom-modeline-mode)
+             :custom
+             (doom-modeline-persp-name nil)
+             (doom-modeline-buffer-encoding nil)
+             (doom-modeline-icon t)
+             (doom-modeline-major-mode-icon nil)
+             (doom-modeline-major-mode-color-icon t)
+             (doom-modeline-buffer-state-icon t)
+             (doom-modeline-buffer-modification-icon t)
+             (doom-modeline-lsp-icon t)
+             (doom-modeline-time-icon t)
+             (doom-modeline-time-live-icon t)
+             (doom-modeline-buffer-file-name-style 'truncate-with-project)
+             :config
+             ;; Contourne un avertissement Emacs 30 / doom-modeline avec certains thèmes :
+             ;; nil n'est pas une valeur valide pour :background, contrairement à unspecified.
+             (defun lv/fix-doom-modeline-faces (&rest _)
+               (when (facep 'doom-modeline-bar-inactive)
+                 (set-face-attribute 'doom-modeline-bar-inactive nil :background 'unspecified)))
+             (lv/fix-doom-modeline-faces)
+             (advice-add 'load-theme :after #'lv/fix-doom-modeline-faces))
+
+(menu-bar-mode -1)
+(global-display-line-numbers-mode 1)
+
+(dolist (hook '(org-mode-hook
+                vterm-mode-hook
+                shell-mode-hook
+                treemacs-mode-hook
+                eshell-mode-hook))
+  (add-hook hook (lambda () (display-line-numbers-mode -1))))
+
+(global-visual-line-mode 1)
+
+(use-package hl-line
+             :ensure nil
+             :init
+             (global-hl-line-mode 1))
+
+(use-package highlight-indent-guides
+             :hook (prog-mode . highlight-indent-guides-mode)
+             :custom
+             (highlight-indent-guides-method 'character))
+
+(defalias 'yes-or-no-p 'y-or-n-p)
+(setq confirm-kill-emacs 'y-or-n-p
+      visible-bell t
+      inhibit-startup-message t)
+
+(when (eq system-type 'darwin)
+  (setq ns-alternate-modifier 'super
+        ns-command-modifier 'meta))
+
+;;; Historique / confort
+
+(use-package savehist
+             :ensure nil
+             :init
+             (savehist-mode 1))
+
+(global-auto-revert-mode 1)
+
+(use-package which-key
+             :init
+             (which-key-mode 1))
+
+(use-package exec-path-from-shell
+             ;; Utile aussi sous Linux quand Emacs est lancé depuis le menu graphique :
+             ;; Emacs ne reçoit pas toujours le même PATH que le shell interactif.
+             :if (or (memq window-system '(mac ns x))
+                     (daemonp))
+             :custom
+             (exec-path-from-shell-variables '("PATH" "MANPATH" "CARGO_HOME" "RUSTUP_HOME"))
+             :init
+             (exec-path-from-shell-initialize))
+
+;;; Eglot / Rust
+
+;; Eglot remplace lsp-mode pour le support LSP.
+;; rust-analyzer doit être installé dans le PATH :
+;;   rustup component add rust-analyzer
+
+(use-package eglot
+             :ensure nil
+             :commands (eglot eglot-ensure)
+             :hook ((rustic-mode . eglot-ensure))
+             :bind (:map eglot-mode-map
+                         ("C-c C-c a" . eglot-code-actions)
+                         ("C-c C-c r" . eglot-rename)
+                         ("C-c C-c f" . eglot-format)
+                         ("C-c C-c q" . eglot-shutdown))
+             :custom
+             (eglot-autoshutdown t)
+             (eglot-events-buffer-size 0)
+             :config
+             ;; Association explicite avec rust-analyzer.
+             (add-to-list 'eglot-server-programs
+                          '((rust-mode rustic-mode) . ("rust-analyzer")))
+
+             ;; Configuration rust-analyzer via Eglot.
+             ;; Ces clés sont envoyées au serveur LSP.
+             (setq-default eglot-workspace-configuration
+                           '(:rust-analyzer
+                             (:cargo (:allFeatures t)
+                              :check (:command "clippy")
+                              :procMacro (:enable t)
+                              :inlayHints (:bindingModeHints (:enable t)
+                                           :chainingHints (:enable t)
+                                           :closingBraceHints (:enable t)
+                                           :closureReturnTypeHints (:enable "always")
+                                           :lifetimeElisionHints (:enable "skip_trivial")
+                                           :parameterHints (:enable json-false)
+                                           :typeHints (:enable t))))))
+
+(use-package flymake
+             :ensure nil
+             :hook (prog-mode . flymake-mode))
+
+(defun lv/rustic-mode-hook ()
+  "Réglages locaux pour `rustic-mode'."
+  ;; Permet C-c C-c C-r sans confirmation, mais uniquement pour les buffers
+  ;; qui visitent un fichier.
+  (when buffer-file-name
+    (setq-local buffer-save-without-query t))
+  ;; Formatage par Eglot/rust-analyzer avant sauvegarde.
+  (add-hook 'before-save-hook #'eglot-format-buffer nil t))
+
+(use-package rustic
+             :mode ("\\.rs\\'" . rustic-mode)
+             :hook (rustic-mode . lv/rustic-mode-hook)
+             :bind (:map rustic-mode-map
+                         ("M-." . xref-find-definitions)
+                         ("M-?" . xref-find-references)
+                         ("C-c C-c l" . flymake-show-buffer-diagnostics)
+                         ("C-c C-c a" . eglot-code-actions)
+                         ("C-c C-c r" . eglot-rename)
+                         ("C-c C-c f" . eglot-format)
+                         ("C-c C-c q" . eglot-shutdown)
+                         ("C-c C-c e" . eglot-code-actions))
+             :custom
+             ;; rustic ne doit plus lancer lsp-mode.
+             (rustic-lsp-client 'eglot)
+             (rustic-format-on-save nil)
+             (rustic-cargo-use-last-stored-arguments t))
+
+(use-package rust-playground)
+
+(use-package toml-mode)
+
+;;; Complétion / snippets
+
+(use-package yasnippet
+             :hook ((prog-mode . yas-minor-mode)
+                    (text-mode . yas-minor-mode))
+             :config
+             (yas-reload-all))
+
+(use-package yasnippet-snippets
+             :after yasnippet
+             :config
+             (yas-reload-all))
+
+(use-package company
+             :hook (after-init . global-company-mode)
+             :bind (:map company-active-map
+                         ("C-n" . company-select-next)
+                         ("C-p" . company-select-previous)
+                         ("M-<" . company-select-first)
+                         ("M->" . company-select-last)
+                    :map company-mode-map
+                         ("<tab>" . lv/tab-indent-or-complete)
+                         ("TAB" . lv/tab-indent-or-complete))
+             :custom
+             (company-idle-delay 0.2)
+             (company-minimum-prefix-length 1))
+
+(defun lv/check-expansion ()
+  "Retourne non-nil si le point est à un endroit où company doit compléter."
+  (save-excursion
+   (cond
+     ((looking-at "\\_>") t)
+     ((and (ignore-errors (backward-char 1) t)
+           (looking-at "\\.")) t)
+     ((and (ignore-errors (backward-char 1) t)
+           (looking-at "::")) t)
+     (t nil))))
+
+(defun lv/do-yas-expand ()
+  "Tente une expansion yasnippet et retourne nil si rien n'est développé."
+  (let ((yas-fallback-behavior 'return-nil))
+    (yas-expand)))
+
+(defun lv/tab-indent-or-complete ()
+  "TAB intelligent : minibuffer, snippet, complétion company, sinon indentation."
+  (interactive)
+  (cond
+    ((minibufferp)
+     (minibuffer-complete))
+    ((and (bound-and-true-p yas-minor-mode)
+          (lv/do-yas-expand)))
+    ((lv/check-expansion)
+     (company-complete-common))
+    (t
+     (indent-for-tab-command))))
+
+;;; Debug Rust
+
+;; dap-mode dépend fortement de lsp-mode dans beaucoup de configurations.
+;; Il est volontairement désactivé ici après migration vers Eglot.
+;; Pour debugger Rust, lance rust-gdb/rust-lldb depuis un terminal,
+;; ou configure un adaptateur DAP séparément plus tard.
+
+(use-package smartparens
+             :hook ((prog-mode . smartparens-mode)
+                    (text-mode . smartparens-mode))
+             :config
+             (require 'smartparens-config)
+             ;; Auto-fermeture des guillemets.
+             (sp-pair "\"" "\""))
+
+(use-package paren-face :defer t)
+
+(use-package paredit
+             :hook ((emacs-lisp-mode lisp-mode) . paredit-mode))
+
+(use-package highlight-parentheses :defer t)
+
+(defun my-lisp-mode-hook-fn ()
+  (smartparens-mode 0)
+  (paredit-mode 1)
+  (paren-face-mode 1)
+  (highlight-parentheses-mode 1))
+
+(dolist (hook '(lisp-mode-hook emacs-lisp-mode-hook))
+  (add-hook hook #'my-lisp-mode-hook-fn))
+
+(provide 'init-v8-eglot)
+;;; init-v8-eglot.el.j2 ends here
