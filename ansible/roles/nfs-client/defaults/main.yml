@@ -12,6 +12,9 @@ packages:
   - python3
   - rust
   - rust-analyzer
+  - ripgrep
+  - gmake
+  - fd-find
 
 accounts:
   - name: spike
