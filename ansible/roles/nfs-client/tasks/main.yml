@@ -55,10 +55,36 @@
     name: "{{ item.name }}"
     uid: "{{ item.uid }}"
     group: "{{ item.gid }}"
+    # shell: /usr/local/bin/zsh
     shell: /bin/tcsh
     state: present
+    create_home: true
     password: "{{ 'valentine' | password_hash('sha512') }}"
   loop: "{{ accounts }}"
+
+# - name: Install .zshrc for spike
+#   ansible.builtin.copy:
+#     dest: "/home/{{ item.name }}/.zshrc"
+#     owner: "{{ item.uid }}"
+#     group: "{{ item.gid }}"
+#     mode: "0644"
+#     content: |
+#       # ~/.zshrc
+#       export EDITOR=vi
+#       export PAGER=less
+#       export HISTFILE=~/.zsh_history
+#       export HISTSIZE=10000
+#       export SAVEHIST=10000
+#       setopt HIST_IGNORE_DUPS
+#       setopt SHARE_HISTORY
+#       setopt AUTO_CD
+#       autoload -Uz compinit
+#       autoload -U colors && colors
+#       compinit
+#       alias ll='ls -lah'
+#       alias grep='grep --color=auto'
+#       PROMPT=$'\n''%F{green}%n@%m:%F{yellow}%~%F{black}>%f '
+#   loop: "{{ accounts }}"
 
 - name: Add existing users to wheel group
   ansible.builtin.user:
@@ -138,7 +164,7 @@
 
 # - name: Copy init.el
 #   ansible.builtin.template:
-#     src: init-v8-eglot.el.j2
+#     src: init-v6.el.j2
 #     dest: "/home/{{ item.name }}/.emacs.d/init.el"
 #     owner: "{{ item.uid }}"
 #     group: "{{ item.gid }}"

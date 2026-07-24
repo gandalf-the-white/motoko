@@ -29,25 +29,25 @@ module "dev" {
 ## N F S
 ####################################################################################
 
-module "nfs" {
-  source      = "./modules/nfs"
-  name        = "nfs-server"
-  prefix      = var.prefix # VLAN 200
-  bridge      = var.bridge
-  octet       = "146"
-  vlan        = 200
-  memory      = 2048
-  nameserver  = var.nameserver
-  target_node = var.target_node
-  clone       = "freebsd-150-tmpl"
-  size        = 100
-  storage     = var.storage
-  cloudinit   = var.cloudinit
-  proxy       = var.proxy
-  userctn     = var.userctn
-  publkeyctn  = var.publkeyctn
-  privkeyctn  = var.privkeyctn
-}
+# module "nfs" {
+#   source      = "./modules/nfs"
+#   name        = "nfs-server"
+#   prefix      = var.prefix # VLAN 200
+#   bridge      = var.bridge
+#   octet       = "146"
+#   vlan        = 200
+#   memory      = 2048
+#   nameserver  = var.nameserver
+#   target_node = var.target_node
+#   clone       = "freebsd-150-tmpl"
+#   size        = 100
+#   storage     = var.storage
+#   cloudinit   = var.cloudinit
+#   proxy       = var.proxy
+#   userctn     = var.userctn
+#   publkeyctn  = var.publkeyctn
+#   privkeyctn  = var.privkeyctn
+# }
 
 ####################################################################################
 ## N F S  S T O R A G E
