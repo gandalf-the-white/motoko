@@ -83,10 +83,10 @@ output "dev_server_ip_address" {
   value       = module.dev
 }
 
-output "nfs_server_ip_address" {
-  description = "NFS Server IP Address"
-  value       = module.nfs
-}
+# output "nfs_server_ip_address" {
+#   description = "NFS Server IP Address"
+#   value       = module.nfs
+# }
 
 output "storage_server_ip_address" {
   description = "Storage Server IP Address"

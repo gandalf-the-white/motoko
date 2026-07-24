@@ -268,27 +268,27 @@
 ;;; 7. COMPLÉTION (Vertico / Orderless / Marginalia / Consult)
 ;;; ============================================================
 
-;; Vertico : interface de complétion verticale dans le minibuffer
-;; (remplace ivy/helm de façon plus légère et native)
-(use-package vertico
-  :init (vertico-mode))
+# ;; Vertico : interface de complétion verticale dans le minibuffer
+# ;; (remplace ivy/helm de façon plus légère et native)
+# (use-package vertico
+#   :init (vertico-mode))
 
-;; Orderless : complétion par composants séparés par des espaces.
-;; Ex: "buf sw" trouve "switch-to-buffer"
-(use-package orderless
-  :init
-  (setq completion-styles '(orderless basic)
-        completion-category-defaults  nil
-        completion-category-overrides '((file (styles partial-completion)))))
+# ;; Orderless : complétion par composants séparés par des espaces.
+# ;; Ex: "buf sw" trouve "switch-to-buffer"
+# (use-package orderless
+#   :init
+#   (setq completion-styles '(orderless basic)
+#         completion-category-defaults  nil
+#         completion-category-overrides '((file (styles partial-completion)))))
 
-;; Marginalia : ajoute des annotations aux candidats dans le minibuffer
-;; (description des commandes, taille des fichiers, etc.)
-(use-package marginalia
-  :init (marginalia-mode))
+# ;; Marginalia : ajoute des annotations aux candidats dans le minibuffer
+# ;; (description des commandes, taille des fichiers, etc.)
+# (use-package marginalia
+#   :init (marginalia-mode))
 
-;; Consult : commandes de recherche et navigation enrichies
-;; (consult-buffer, consult-grep, consult-imenu, etc.)
-(use-package consult)
+# ;; Consult : commandes de recherche et navigation enrichies
+# ;; (consult-buffer, consult-grep, consult-imenu, etc.)
+# (use-package consult)
 
 ;;; ============================================================
 ;;; 8. EVIL (émulation Vim)
