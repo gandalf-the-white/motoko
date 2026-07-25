@@ -3,18 +3,44 @@
 ## D E V
 ####################################################################################
 
-module "dev" {
-  source      = "./modules/dev"
-  name        = "dev-server"
+# module "dev" {
+#   source      = "./modules/dev"
+#   name        = "dev-server"
+#   prefix      = var.prefix # VLAN 200
+#   bridge      = var.bridge
+#   octet       = "145"
+#   nfs         = "144"
+#   vlan        = 200
+#   memory      = 4096
+#   nameserver  = var.nameserver
+#   target_node = var.target_node
+#   clone       = "freebsd-150-tmpl"
+#   size        = 30
+#   storage     = var.storage
+#   cloudinit   = var.cloudinit
+#   proxy       = var.proxy
+#   userctn     = var.userctn
+#   publkeyctn  = var.publkeyctn
+#   privkeyctn  = var.privkeyctn
+#   # depends_on  = [module.nfs]
+# }
+
+###################################################################################
+## U S E R
+####################################################################################
+
+module "user" {
+  source      = "./modules/user"
+  name        = "user-server"
   prefix      = var.prefix # VLAN 200
   bridge      = var.bridge
-  octet       = "145"
+  octet       = "146"
   nfs         = "144"
   vlan        = 200
   memory      = 4096
   nameserver  = var.nameserver
   target_node = var.target_node
-  clone       = "freebsd-150-tmpl"
+  clone       = "debian-13-tmpl"
   size        = 30
   storage     = var.storage
   cloudinit   = var.cloudinit
@@ -78,9 +104,14 @@ module "storage" {
 ## O U T P U T
 ####################################################################################
 
-output "dev_server_ip_address" {
-  description = "Dev Server IP Address"
-  value       = module.dev
+# output "dev_server_ip_address" {
+#   description = "Dev Server IP Address"
+#   value       = module.dev
+# }
+
+output "user_server_ip_address" {
+  description = "User Server IP Address"
+  value       = module.user
 }
 
 # output "nfs_server_ip_address" {

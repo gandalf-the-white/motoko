@@ -255,7 +255,8 @@
     - name: Enable nfsuserd for NFSv4 id mapping
       community.general.sysrc:
         name: nfsuserd_enable
-        value: "YES"
+        # value: "YES"
+        value: "NO"
 
     - name: Configure NFS server TCP only
       community.general.sysrc:
@@ -288,6 +289,18 @@
         value: "0"
         state: present
 
+    - name: Allow non-reserved ports for nfsd
+      ansible.posix.sysctl:
+        name: vfs.nfs.enable_uidtostring
+        value: "1"
+        state: present
+
+    - name: Allow non-reserved ports for nfsd
+      ansible.posix.sysctl:
+        name: vfs.nfsd.enable_stringtouid=1
+        value: "1"
+        state: present
+
     - name: Deploy NFSv4 exports
       ansible.builtin.template:
         src: exports.j2
@@ -302,7 +315,7 @@
         name: "{{ item }}"
         state: started
       loop:
-        - nfsuserd
+        # - nfsuserd
         - nfsd
 
     # - name: NFS configuration
