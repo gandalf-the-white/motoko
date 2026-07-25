@@ -31,11 +31,11 @@
 ;;; Maintenance
 
 (use-package auto-package-update
-   :ensure t
-   :config
-   (setq auto-package-update-delete-old-versions t
-         auto-package-update-interval 4)
-   (auto-package-update-maybe))
+             :ensure t
+             :config
+             (setq auto-package-update-delete-old-versions t
+                   auto-package-update-interval 4)
+             (auto-package-update-maybe))
 
 ;;; Performance
 
@@ -120,8 +120,8 @@
 
 (if (boundp 'use-short-answers)
     (setq use-short-answers t)
-  ;; Compatibilité avec les versions d’Emacs antérieures à `use-short-answers'.
-  (defalias 'yes-or-no-p 'y-or-n-p))
+    ;; Compatibilité avec les versions d’Emacs antérieures à `use-short-answers'.
+    (defalias 'yes-or-no-p 'y-or-n-p))
 
 (setq confirm-kill-emacs 'y-or-n-p
       visible-bell t
@@ -291,7 +291,32 @@
     (t
      (indent-for-tab-command))))
 
-;;; Debug Rust
+;;; Lisp
+
+(setq inferior-lisp-program "/usr/local/bin/sbcl")
+
+(use-package sly-asdf      :defer t)
+(use-package sly-quicklisp :defer t)
+
+(use-package sly
+             :defer t
+             :after (sly-asdf sly-quicklisp)
+             :config
+             (setq sly-mrepl-pop-sylvester nil) ; désactive la mascotte au démarrage
+             :custom-face
+             (sly-mrepl-output-face ((t (:foreground "sienna")))))
+
+(add-to-list 'auto-mode-alist '("\\.asd\\'" . lisp-mode))
+
+(defun my/start-sly-if-asd ()
+  (when (and buffer-file-name
+             (string-match-p "\\.asd\\'" buffer-file-name))
+    (require 'sly)
+    (unless (sly-connected-p)
+      (sly))))
+
+(add-hook 'lisp-mode-hook #'my/start-sly-if-asd)
+
 
 ;; dap-mode dépend fortement de lsp-mode dans beaucoup de configurations.
 ;; Il est volontairement désactivé ici après migration vers Eglot.
