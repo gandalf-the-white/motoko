@@ -1,0 +1,19 @@
+---
+- name: install dev
+  hosts: all
+  become: true
+
+  vars:
+    hostname: "${hostname}"
+    nfs: "${nfs}"
+    http_proxy: "${proxy}"
+    https_proxy: "${proxy}"
+    no_proxy: "${noproxy}"
+
+  environment:
+    http_proxy: "${proxy}"
+    https_proxy: "${proxy}"
+    no_proxy: "${noproxy}"
+
+  roles:
+    - roles/nfs-user

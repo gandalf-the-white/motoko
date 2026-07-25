@@ -1,0 +1,274 @@
+(require 'package)
+
+(setq package-check-signature nil)
+
+(setq user-full-name "spike spiegel"
+      user-mail-address "spike@gmail.com")
+
+(setq package-enable-at-startup nil)
+
+(setq package-archives
+      '(("melpa" . "https://melpa.org/packages/")
+        ("gnu"   . "https://elpa.gnu.org/packages/")
+        ("org"   . "https://orgmode.org/elpa/")))
+
+(package-initialize)
+
+(setq gc-cons-threshold 10000000)
+(add-hook 'emacs-startup-hook
+          (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package)
+  (eval-when-compile (require 'use-package)))
+
+(eval-and-compile
+  (setq use-package-always-ensure t
+        use-package-expand-minimally t))
+
+(setq inhibit-startup-message t
+      visible-bell t)
+
+(setq custom-file "~/.emacs.d/custom.el")
+(load custom-file 'noerror)
+
+(add-to-list 'load-path "~/emacs.d/lisp/")
+
+(setq inhibit-startup-screen t)
+
+(setq mac-command-modifier 'meta
+      mac-option-modifier 'none)
+
+(menu-bar-mode -1)
+(global-display-line-numbers-mode 1)
+(global-visual-line-mode 1)
+(global-auto-revert-mode)
+
+(dolist (mode '(org-mode-hook
+		vterm-mode-hook
+		shell-mode-hook
+		treemacs-mode-hook
+		eshell-mode-hook))
+  (add-hook mode (lambda ()
+		   (display-line-numbers-mode 0))))
+
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+(setq ns-alternate-modifier 'super
+      ns-command-modifier 'meta)
+
+(setq backup-directory-alist '(("." . "~/.emacs.d/backup"))
+      backup-by-copying t    ; Don't delink hardlinks
+      version-control t      ; Use version numbers on backups
+      delete-old-versions t  ; Automatically delete excess backups
+      kept-new-versions 20   ; how many of the newest versions to keep
+      kept-old-versions 5    ; and how many of the old
+      )
+
+;; (setq-default tab-width 4
+;; 	          indent-tabs-mode nil
+;; 	          c-basic-offset 4)
+
+(setq-default indent-tabs-mode nil)
+
+(set-language-environment 'utf-8)
+(setq local-coding-system 'utf-8)
+
+(prefer-coding-system        'utf-8)
+(setq default-file-name-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+
+(use-package auto-package-update
+  :ensure t
+  :config
+  (setq auto-package-update-delete-old-versions t
+        auto-package-update-interval 4)
+  (auto-package-update-maybe))
+
+(use-package vertico
+  :ensure t
+  :config
+  (vertico-mode 1))
+
+(use-package rainbow-mode
+  :ensure t)
+
+  (use-package fzf)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; T H E M E S          ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-package zenburn-theme
+  :ensure t
+  :config
+  (load-theme 'zenburn t))
+
+(use-package doom-modeline
+  :hook (after-init . doom-modeline-mode))
+
+(setq confirm-kill-emacs 'yes-or-no-p)
+
+(use-package hl-line
+  :ensure t
+  :init (global-hl-line-mode 1))
+
+(use-package highlight-indent-guides
+  :ensure t
+  :commands highlight-indent-guides-mode
+  :config
+  (add-hook 'prog-mode-hook 'highlight-indent-guides-mode)
+  (setq highlight-indent-guides-method 'character
+        ;; default is \x2502 but it is very slow on Mac
+        highlight-indent-guides-character ?\xFFE8
+        highlight-indent-guides-responsive 'top)
+  (set-face-background 'highlight-indent-guides-odd-face "darkgray")
+  (set-face-background 'highlight-indent-guides-even-face "dimgray")
+  (set-face-foreground 'highlight-indent-guides-character-face "dimgray"))
+
+(use-package beacon
+  :ensure t
+  :config
+  (beacon-mode t))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; C O M M A N D        ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-package ivy
+  :config
+  (ivy-mode t))
+
+(setq ivy-initial-inputs-alist nil)
+
+(use-package counsel
+  :bind (("M-x" . counsel-M-x)))
+
+(use-package prescient)
+(use-package ivy-prescient
+  :config
+  (ivy-prescient-mode t))
+
+(use-package swiper
+  :bind (("M-s" . counsel-grep-or-swiper)))
+
+(use-package ivy-hydra)
+
+(use-package major-mode-hydra
+  :bind
+  ("C-M-SPC" . major-mode-hydra)
+  :config
+  (major-mode-hydra-define org-mode
+    ()
+    ("Tools"
+     (("l" org-lint "lint")))))
+
+(use-package which-key
+  :config
+  (add-hook 'after-init-hook 'which-key-mode))
+
+(use-package undo-tree
+  :defer 5
+  :config
+  (global-undo-tree-mode 1))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; C O D I N G          ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-package rainbow-delimiters
+  :ensure t
+  :hook ((lisp-mode . rainbow-delimiters-mode)
+         (slime-repl-mode . rainbow-delimiters-mode)))
+
+(use-package prog-mode
+  :ensure nil
+  :hook ((prog-mode . rainbow-delimiters-mode)))
+
+(use-package smartparens
+  :ensure t
+  :hook ((prog-mode . smartparens-mode)
+         (prog-mode . show-smartparens-mode)
+         (slime-repl-mode . smartparens-mode))
+  :init
+  (require 'smartparens-config)
+  :config
+  ;; raccourcis utiles
+  (define-key smartparens-mode-map (kbd "C-M-f") #'sp-forward-sexp)
+  (define-key smartparens-mode-map (kbd "C-M-b") #'sp-backward-sexp)
+  (define-key smartparens-mode-map (kbd "C-M-d") #'sp-down-sexp)
+  (define-key smartparens-mode-map (kbd "C-M-a") #'sp-backward-down-sexp))
+
+(use-package magit
+  :bind ("C-x g" . magit-status))
+
+(use-package yasnippet
+  :config
+  (add-to-list 'yas-snippet-dirs "~/.emacs.d/snippets")
+  (yas-global-mode 1))
+
+(use-package yasnippet-snippets)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; S L I M
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-package slime
+  :ensure t
+  :init
+  (setq inferior-lisp-program "/usr/local/bin/sbcl")
+  :config
+  (setq slime-contribs '(slime-fancy slime-asdf slime-indentation))
+  (slime-setup)
+  ;; afficher le REPL sous le buffer courant
+  (setq slime-repl-display-inferior-buffer-action
+        '(display-buffer-below-selected)))
+
+(use-package slime-repl
+  :ensure nil
+  :hook (slime-repl-mode . rainbow-delimiters-mode))
+
+(use-package company
+  :ensure t
+  :hook ((lisp-mode . company-mode)
+         (slime-repl-mode . company-mode)))
+
+(setq lisp-indent-function 'common-lisp-indent-function)
+
+(with-eval-after-load 'slime
+  (define-key slime-mode-map (kbd "C-c C-c") #'slime-compile-defun)
+  (define-key slime-mode-map (kbd "C-c C-k") #'slime-compile-and-load-file)
+  (define-key slime-mode-map (kbd "C-c C-z") #'slime-switch-to-output-buffer))
+
+;;;; Auto-start SLIME when opening .asd
+
+(defun my/start-slime-for-asd ()
+  (when (and buffer-file-name
+             (string-suffix-p ".asd" buffer-file-name)
+             (not (slime-connected-p)))
+    (run-at-time 0.3 nil #'slime)))
+
+(add-hook 'lisp-mode-hook #'my/start-slime-for-asd)
+
+;;;; Load ASDF system automatically
+
+(defun my/slime-load-asd-system ()
+  (when (and buffer-file-name
+             (string-suffix-p ".asd" buffer-file-name))
+    (let ((system (file-name-base buffer-file-name)))
+      (slime-eval `(asdf:load-system ,system)))))
+
+(add-hook 'slime-connected-hook #'my/slime-load-asd-system)
+
+;;;; Ensure .asd files open in lisp-mode
+
+(add-to-list 'auto-mode-alist '("\\.asd\\'" . lisp-mode))
+
+(setq slime-auto-select-connection t)
+(setq slime-repl-history-remove-duplicates t)
+(setq slime-complete-symbol-function 'slime-fuzzy-complete-symbol)
+(setq slime-repl-use-own-frame nil)

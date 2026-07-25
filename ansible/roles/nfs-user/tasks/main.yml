@@ -1,0 +1,107 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for ansible/roles/nfs-client
+
+- name: Set runtime hostname
+  ansible.builtin.hostname:
+    name: "{{ hostname }}"
+  tags: debian
+
+- name: Persist hostname in /etc/hostname
+  ansible.builtin.copy:
+    dest: /etc/hostname
+    content: "{{ hostname }}\n"
+    owner: root
+    group: root
+    mode: 0644
+  tags: debian
+
+- name: Install packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+  tags: debian
+
+- name: Allow sudo group sudo without password
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    regexp: '^%sudo\s'
+    line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+    validate: "/usr/sbin/visudo -cf %s"
+  tags: debian
+
+- name: Ensure nfs-common is installed
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+
+- name: Create NFS base directory
+  ansible.builtin.file:
+    path: "/mnt/nfs"
+    owner: root
+    group: root
+    state: directory
+    mode: "0755"
+  tags: debian
+
+- name: Create user NFS directories
+  ansible.builtin.file:
+    path: "/mnt/nfs/{{ item.name }}"
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ accounts }}"
+  tags: debian
+
+- name: Mount NFSv4 directories
+  ansible.posix.mount:
+    src: "{{ nfs }}:/{{ item.name }}"
+    path: "/mnt/nfs/{{ item.name }}"
+    state: mounted
+    fstype: nfs4
+    # opts: "rw,tcp,hard,noatime,vers=4"
+  loop: "{{ accounts }}"
+  tags: mount
+
+- name: Create user NFS directory Project
+  ansible.builtin.file:
+    path: "/mnt/nfs/{{ item.name }}/projects"
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ accounts }}"
+  tags: link
+
+- name: Create symbolic link to projects
+  ansible.builtin.file:
+    src: "/mnt/nfs/{{ item.name }}/projects"
+    dest: "/home/{{ item.name }}/projects"
+    state: link
+    force: true
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
+  loop: "{{ accounts }}"
+  tags: link
+
+- name: Replace PS1 in /home/../.bashrc
+  become: true
+  ansible.builtin.lineinfile:
+    path: "/home/{{ item.name }}/.bashrc"
+    regexp: "^PS1="
+    line: >-
+      PS1="\[\033[0;37m\]\342\224\214\342\224\200\$([[ \$? != 0 ]] && echo \"[\[\033[0;31m\]\342\234\227\[\033[0;37m\]]\342\224\200\")[$(if [[ ${EUID} == 0 ]]; then echo '\[\033[0;31m\]\h'; else echo '\[\033[0;33m\]\u\[\033[0;37m\]@\[\033[0;96m\]\h'; fi)\[\033[0;37m\]]\342\224\200[\[\033[0;32m\]\w\[\033[0;37m\]]\n\[\033[0;37m\]\342\224\224\342\224\200\342\224\200\342\225\274 \[\033[0m\]"
+    backup: true
+  loop: "{{ accounts }}"
+  tags: prompt
+
+- name: Ensure emacs directory exists
+  ansible.builtin.file:
+    path: "/home/{{ item.name }}/.emacs.d"
+    state: directory
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
+    mode: "0755"
+  loop: "{{ accounts }}"
