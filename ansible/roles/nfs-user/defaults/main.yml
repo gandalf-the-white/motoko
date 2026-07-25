@@ -3,6 +3,7 @@
 # defaults file for ansible/roles/nfs-client
 
 packages:
+  - git
   - sbcl
   - nfs-common
   - emacs-nox
