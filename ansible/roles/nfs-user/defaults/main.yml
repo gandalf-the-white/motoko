@@ -5,6 +5,7 @@
 packages:
   - sbcl
   - nfs-common
+  - emacs-nox
 
 accounts:
   - name: spike
