@@ -225,6 +225,11 @@
 
 (use-package toml-mode)
 
+(use-package flycheck
+  :ensure t
+  :config
+  (add-hook 'after-init-hook #'global-flycheck-mode))
+
 ;;; Complétion / snippets
 
 (use-package yasnippet
