@@ -4,6 +4,7 @@
 
 packages:
   - git
+  - gcc
   - sbcl
   - nfs-common
   - emacs-nox
