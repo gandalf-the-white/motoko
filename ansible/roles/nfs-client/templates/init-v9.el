@@ -1,4 +1,4 @@
-;;; init-v9-corrige.el --- Configuration Emacs pour Rust -*- lexical-binding: t; -*-
+;;; init-v9.el.j2 --- Configuration Emacs pour Rust -*- lexical-binding: t; -*-
 
 ;;; Bootstrap package.el / use-package
 
@@ -31,10 +31,10 @@
 ;;; Maintenance
 
 (use-package auto-package-update
-             :ensure t
+             :custom
+             (auto-package-update-delete-old-versions t)
+             (auto-package-update-hide-results t)
              :config
-             (setq auto-package-update-delete-old-versions t
-                   auto-package-update-interval 4)
              (auto-package-update-maybe))
 
 ;;; Performance
@@ -118,11 +118,7 @@
              :custom
              (highlight-indent-guides-method 'character))
 
-(if (boundp 'use-short-answers)
-    (setq use-short-answers t)
-    ;; Compatibilité avec les versions d’Emacs antérieures à `use-short-answers'.
-    (defalias 'yes-or-no-p 'y-or-n-p))
-
+(defalias 'yes-or-no-p 'y-or-n-p)
 (setq confirm-kill-emacs 'y-or-n-p
       visible-bell t
       inhibit-startup-message t)
@@ -198,20 +194,14 @@
              :ensure nil
              :hook (prog-mode . flymake-mode))
 
-(defun lv/eglot-format-buffer-maybe ()
-  "Formate le buffer avec Eglot lorsqu’un serveur LSP le gère."
-  (when (and (fboundp 'eglot-managed-p)
-             (eglot-managed-p))
-    (eglot-format-buffer)))
-
 (defun lv/rustic-mode-hook ()
   "Réglages locaux pour `rustic-mode'."
-  ;; Permet les sauvegardes non interactives, uniquement pour les buffers
-  ;; qui visitent réellement un fichier.
+  ;; Permet C-c C-c C-r sans confirmation, mais uniquement pour les buffers
+  ;; qui visitent un fichier.
   (when buffer-file-name
     (setq-local buffer-save-without-query t))
-  ;; Eglot se connecte de façon asynchrone : ne formater que lorsqu'il est prêt.
-  (add-hook 'before-save-hook #'lv/eglot-format-buffer-maybe nil t))
+  ;; Formatage par Eglot/rust-analyzer avant sauvegarde.
+  (add-hook 'before-save-hook #'eglot-format-buffer nil t))
 
 (use-package rustic
              :mode ("\\.rs\\'" . rustic-mode)
@@ -269,7 +259,7 @@
      ((looking-at "\\_>") t)
      ((and (ignore-errors (backward-char 1) t)
            (looking-at "\\.")) t)
-     ((and (ignore-errors (backward-char 2) t)
+     ((and (ignore-errors (backward-char 1) t)
            (looking-at "::")) t)
      (t nil))))
 
@@ -291,32 +281,7 @@
     (t
      (indent-for-tab-command))))
 
-;;; Lisp
-
-(setq inferior-lisp-program "/usr/local/bin/sbcl")
-
-(use-package sly-asdf      :defer t)
-(use-package sly-quicklisp :defer t)
-
-(use-package sly
-             :defer t
-             :after (sly-asdf sly-quicklisp)
-             :config
-             (setq sly-mrepl-pop-sylvester nil) ; désactive la mascotte au démarrage
-             :custom-face
-             (sly-mrepl-output-face ((t (:foreground "sienna")))))
-
-(add-to-list 'auto-mode-alist '("\\.asd\\'" . lisp-mode))
-
-(defun my/start-sly-if-asd ()
-  (when (and buffer-file-name
-             (string-match-p "\\.asd\\'" buffer-file-name))
-    (require 'sly)
-    (unless (sly-connected-p)
-      (sly))))
-
-(add-hook 'lisp-mode-hook #'my/start-sly-if-asd)
-
+;;; Debug Rust
 
 ;; dap-mode dépend fortement de lsp-mode dans beaucoup de configurations.
 ;; Il est volontairement désactivé ici après migration vers Eglot.
@@ -331,14 +296,12 @@
              ;; Auto-fermeture des guillemets.
              (sp-pair "\"" "\""))
 
-(use-package paren-face
-             :commands paren-face-mode)
+(use-package paren-face :defer t)
 
 (use-package paredit
-             :commands paredit-mode)
+             :hook ((emacs-lisp-mode lisp-mode) . paredit-mode))
 
-(use-package highlight-parentheses
-             :commands highlight-parentheses-mode)
+(use-package highlight-parentheses :defer t)
 
 (defun my-lisp-mode-hook-fn ()
   (smartparens-mode 0)
@@ -350,4 +313,4 @@
   (add-hook hook #'my-lisp-mode-hook-fn))
 
 (provide 'init-v9)
-;;; init-v9-corrige.el ends here
+;;; init-v8-eglot.el.j2 ends here

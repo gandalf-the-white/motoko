@@ -119,7 +119,7 @@
 
 - name: Create a symbolic link
   ansible.builtin.file:
-    src: "/mnt/nfs/{{ item.name }}/"
+    src: "/mnt/nfs/{{ item.name }}/projects"
     dest: "/home/{{ item.name }}/projects"
     state: link
     force: true
@@ -162,11 +162,12 @@
     group: "{{ item.gid }}"
     mode: "0755"
   loop: "{{ accounts }}"
-# - name: Copy init.el
-#   ansible.builtin.template:
-#     src: init-v6.el.j2
-#     dest: "/home/{{ item.name }}/.emacs.d/init.el"
-#     owner: "{{ item.uid }}"
-#     group: "{{ item.gid }}"
-#     mode: "0644"
-#   loop: "{{ accounts }}"
+
+- name: Copy init.el
+  ansible.builtin.template:
+    src: init-v11.el.j2
+    dest: "/home/{{ item.name }}/.emacs.d/init.el"
+    owner: "{{ item.uid }}"
+    group: "{{ item.gid }}"
+    mode: "0644"
+  loop: "{{ accounts }}"
