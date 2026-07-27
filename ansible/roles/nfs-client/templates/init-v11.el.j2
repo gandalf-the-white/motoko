@@ -273,15 +273,23 @@
 (use-package flycheck
              :ensure t)
 
-(use-package lsp-mode
-             :hook (go-mode . lsp)
-             :config
-             (lsp-enable-which-key-integration t))
+;; (use-package lsp-mode
+;;              :hook (go-mode . lsp)
+;;              :config
+;;              (lsp-enable-which-key-integration t))
 
-(use-package lsp-ui
-             :bind (("C-c A" . lsp-execute-code-action)
-                    ("C-c d" . lsp-ui-doc-show)
-                    ("C-c I" . lsp-ui-imenu)))
+;; (use-package lsp-ui
+;;              :bind (("C-c A" . lsp-execute-code-action)
+;;                     ("C-c d" . lsp-ui-doc-show)
+;;                     ("C-c I" . lsp-ui-imenu)))
+
+(use-package eglot
+             :hook ((rust-mode nix-mode) . eglot-ensure)
+             :config (add-to-list 'eglot-server-programs
+                                  `(rust-mode . ("rust-analyzer" :initializationOptions
+                                                                 ( :procMacro (:enable t)
+                                                                   :cargo ( :buildScripts (:enable t)
+                                                                            :features "all"))))))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; R U S T         ;;
