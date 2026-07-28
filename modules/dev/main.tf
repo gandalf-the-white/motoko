@@ -17,7 +17,7 @@ resource "proxmox_vm_qemu" "server" {
 
   cpu {
     type    = "host"
-    cores   = 1
+    cores   = 2
     sockets = 1
   }
 
